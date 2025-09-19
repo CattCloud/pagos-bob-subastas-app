@@ -1,1 +1,0 @@
-# pagos-bob-subastas-app
