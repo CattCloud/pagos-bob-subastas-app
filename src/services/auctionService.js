@@ -17,30 +17,33 @@ export default class AuctionService {
         // Backend devuelve: { success: true, data: { won_auctions: [...] } }
         const wonAuctions = res.data.won_auctions || res.data.auctions || res.data.wonAuctions || res.data || [];
         
-        // Normalizar estructura: cada item tiene { auction, offer_details, payment_status }
+        // Normalizar estructura: cada item tiene { auction, guarantee_details|offer_details, payment_status }
         return wonAuctions
           .filter(item => {
             // Solo mostrar subastas pendientes de pago (estado pendiente y sin pago)
             return item.auction?.estado === 'pendiente' &&
                    item.payment_status?.has_payment === false;
           })
-          .map(item => ({
-            // Estructura normalizada que espera AuctionSelector
-            id: item.auction.id,
-            estado: item.auction.estado,
-            monto_oferta: Number(item.offer_details?.monto_oferta || 0),
-            monto_garantia: Number(item.offer_details?.monto_garantia || 0),
-            fecha_limite_pago: item.auction.fecha_limite_pago,
-            asset: {
-              placa: item.auction.asset?.placa,
-              marca: item.auction.asset?.marca,
-              modelo: item.auction.asset?.modelo,
-              año: item.auction.asset?.año,
-              empresa_propietaria: item.auction.asset?.empresa_propietaria,
-            },
-            // Mantener datos originales por si son necesarios
-            _original: item,
-          }));
+          .map(item => {
+            const details = item.guarantee_details || item.offer_details || item.guarantee || item.offer || {};
+            return {
+              // Estructura normalizada que espera AuctionSelector
+              id: item.auction.id,
+              estado: item.auction.estado,
+              monto_oferta: Number(details.monto_oferta || 0),
+              monto_garantia: Number(details.monto_garantia || 0),
+              fecha_limite_pago: item.auction.fecha_limite_pago,
+              asset: {
+                placa: item.auction.asset?.placa,
+                marca: item.auction.asset?.marca,
+                modelo: item.auction.asset?.modelo,
+                año: item.auction.asset?.año,
+                empresa_propietaria: item.auction.asset?.empresa_propietaria,
+              },
+              // Mantener datos originales por si son necesarios
+              _original: item,
+            };
+          });
       }
       throw new Error(res.message || 'No se pudieron obtener subastas ganadas');
     } catch (err) {
@@ -111,8 +114,6 @@ export default class AuctionService {
    * POST /auctions
    * @param {object} payload
    * {
-   *   fecha_inicio: string ISO,
-   *   fecha_fin: string ISO,
    *   asset: {
    *     placa: string,
    *     empresa_propietaria: string,
@@ -171,17 +172,16 @@ export default class AuctionService {
   }
 
   /**
-   * Registrar ganador de subasta (HU-SUB-03)
+   * Registrar ganador de subasta (Guarantee)
    * POST /auctions/:id/winner
    * @param {string} auctionId
    * @param {object} winnerData
    * {
-   *   user_id: number,
+   *   user_id: string,       // CUID del usuario
    *   monto_oferta: number,
-   *   fecha_oferta: string ISO,
    *   fecha_limite_pago?: string ISO (opcional)
    * }
-   * @returns {Promise<Object>} offer creada + auction actualizada
+   * @returns {Promise<Object>} guarantee creada + auction actualizada
    */
   static async assignWinner(auctionId, winnerData) {
     try {
@@ -199,7 +199,6 @@ export default class AuctionService {
       const payload = {
         user_id: userId,
         monto_oferta: Number(winnerData.monto_oferta),
-        fecha_oferta: winnerData.fecha_oferta,
         ...(winnerData.fecha_limite_pago ? { fecha_limite_pago: winnerData.fecha_limite_pago } : {})
       };
 

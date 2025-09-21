@@ -32,7 +32,7 @@ const LIMIT_OPTIONS = [
   { value: 50, label: '50 por página' },
 ];
 
-function TransactionFilters({ value, onChange, onReset, disabled = false }) {
+function TransactionFilters({ value, onChange, onReset, disabled = false, showType = true }) {
   const [local, setLocal] = useState({
     tipo_especifico: '',
     estado: '',
@@ -145,13 +145,15 @@ function TransactionFilters({ value, onChange, onReset, disabled = false }) {
               />
             </div>
 
-            <Select
-              label="Tipo"
-              options={TIPO_OPTIONS}
-              value={local.tipo_especifico}
-              onChange={(e) => handleChange('tipo_especifico', e.target.value)}
-              disabled={disabled}
-            />
+            {showType && (
+              <Select
+                label="Tipo"
+                options={TIPO_OPTIONS}
+                value={local.tipo_especifico}
+                onChange={(e) => handleChange('tipo_especifico', e.target.value)}
+                disabled={disabled}
+              />
+            )}
 
             <Select
               label="Estado"

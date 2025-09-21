@@ -98,7 +98,7 @@ const Modal = ({
         )}
         
         {/* Body */}
-        <div className={`p-6 flex-1 overflow-y-auto min-h-0 ${contentClassName}`}>
+        <div className={`p-2 flex-1 overflow-y-auto min-h-0 ${contentClassName}`}>
           {children}
         </div>
       </div>

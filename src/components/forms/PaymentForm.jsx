@@ -70,37 +70,19 @@ export default function PaymentForm({
 
   const todayIso = new Date().toISOString().slice(0, 16);
 
-  // Helper para convertir ISO (UTC) a formato local compatible con input datetime-local
-  const toLocalInputValue = (iso) => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const pad = (n) => String(n).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    const mm = pad(d.getMonth() + 1);
-    const dd = pad(d.getDate());
-    const hh = pad(d.getHours());
-    const mi = pad(d.getMinutes());
-    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-  };
 
-  // Regla de negocio: fecha de pago no puede ser anterior al inicio de la subasta
-  const auctionStartISO = auction?._original?.auction?.fecha_inicio || auction?.fecha_inicio || null;
-  const minDateLocal = auctionStartISO ? toLocalInputValue(auctionStartISO) : undefined;
-
-  // Prefijar una fecha válida por defecto (máximo entre ahora y inicio de subasta)
+  // Prefijar una fecha válida por defecto (ahora)
   useEffect(() => {
     if (!auction) return;
     const currentVal = watch('fecha_pago');
     if (currentVal) return;
-    const now = Date.now();
-    const startMs = auctionStartISO ? new Date(auctionStartISO).getTime() : 0;
-    const base = new Date(Math.max(now, isNaN(startMs) ? now : startMs));
+    const base = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const localVal = `${base.getFullYear()}-${pad(base.getMonth() + 1)}-${pad(base.getDate())}T${pad(base.getHours())}:${pad(base.getMinutes())}`;
     setValue('fecha_pago', localVal, { shouldValidate: true });
     onChange?.({ ...watch(), fecha_pago: localVal });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auction, auctionStartISO]);
+  }, [auction]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -164,7 +146,6 @@ export default function PaymentForm({
               type="datetime-local"
               className="mt-1 w-full px-3 py-2 border border-border rounded-md focus:ring-primary-500 focus:border-primary-500"
               max={todayIso}
-              min={minDateLocal}
               disabled={disabled}
               {...register('fecha_pago', {
                 required: 'Fecha de pago es requerida',
@@ -172,15 +153,7 @@ export default function PaymentForm({
                   if (!v) return 'Fecha de pago es requerida';
                   const d = new Date(v);
                   if (isNaN(d.getTime())) return 'Fecha inválida';
-                  // No futura
                   if (d.getTime() > Date.now()) return 'Fecha no puede ser futura';
-                  // No anterior al inicio de la subasta
-                  if (auctionStartISO) {
-                    const start = new Date(auctionStartISO).getTime();
-                    if (!isNaN(start) && d.getTime() < start) {
-                      return 'La fecha no puede ser anterior al inicio de la subasta';
-                    }
-                  }
                   return true;
                 },
               })}

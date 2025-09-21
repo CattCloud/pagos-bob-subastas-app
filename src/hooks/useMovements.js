@@ -129,7 +129,8 @@ export function useMovements(initial = {}) {
 
   // Obtener detalle de un movimiento
   const getMovementDetail = useCallback(async (movementId) => {
-    return MovementService.getMovement(movementId);
+    // Pedir relacionados para que el modal tenga Usuario/Subasta completos sin retraso
+    return MovementService.getMovement(movementId, { include: 'user,auction,guarantee,refund' });
   }, []);
 
   return {

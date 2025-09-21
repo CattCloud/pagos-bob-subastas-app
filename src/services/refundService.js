@@ -206,19 +206,22 @@ export class RefundService {
             const estado = item.auction?.estado;
             return estado === 'perdida' || estado === 'penalizada';
           })
-          .map(item => ({
-            id: item.auction.id,
-            estado: item.auction.estado,
-            monto_oferta: Number(item.offer_details?.monto_oferta || 0),
-            monto_garantia: Number(item.offer_details?.monto_garantia || 0),
-            asset: {
-              placa: item.auction.asset?.placa,
-              marca: item.auction.asset?.marca,
-              modelo: item.auction.asset?.modelo,
-              año: item.auction.asset?.año,
-            },
-            _original: item,
-          }));
+          .map(item => {
+            const details = item.guarantee_details || item.offer_details || item.guarantee || item.offer || {};
+            return {
+              id: item.auction.id,
+              estado: item.auction.estado,
+              monto_oferta: Number(details.monto_oferta || 0),
+              monto_garantia: Number(details.monto_garantia || 0),
+              asset: {
+                placa: item.auction.asset?.placa,
+                marca: item.auction.asset?.marca,
+                modelo: item.auction.asset?.modelo,
+                año: item.auction.asset?.año,
+              },
+              _original: item,
+            };
+          });
       }
       return [];
     } catch (error) {

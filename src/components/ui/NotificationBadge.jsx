@@ -25,7 +25,7 @@ export default function NotificationBadge({
       type="button"
       onClick={onClick}
       className={`
-        relative inline-flex items-center justify-center p-2 rounded-lg
+        relative cursor-pointer inline-flex items-center justify-center p-2 rounded-lg
         text-text-secondary hover:text-text-primary hover:bg-bg-tertiary
         transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500
         ${className}

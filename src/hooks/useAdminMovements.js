@@ -2,6 +2,36 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import MovementService from '../services/movementService';
 
+ // Normalizador: homologa y aplana movimientos que pueden venir anidados
+ // Soporta shape: { movement: {...campos} } o plano directamente
+ const normalizeMovement = (m = {}) => {
+   const base = m && typeof m.movement === 'object' ? m.movement : m;
+   const pickConcept = (obj = {}) =>
+     obj?.concepto ??
+     obj?.concept ??
+     obj?.descripcion ??
+     obj?.description ??
+     obj?.glosa ??
+     obj?.detalle ??
+     obj?.concept_text ??
+     obj?.title ??
+     obj?.observacion ??
+     obj?.observaciones ??
+     obj?.descripcion_movimiento ??
+     obj?.detalle_movimiento ??
+     obj?.metadata?.concepto ??
+     obj?.metadata?.description ??
+     obj?.details?.concepto ??
+     obj?.details?.description ??
+     '';
+
+   // Intentar primero desde el objeto base (movement), luego desde el wrapper (m)
+   const rawConcept = pickConcept(base) || pickConcept(m);
+   const concepto = typeof rawConcept === 'string' ? rawConcept.trim() : rawConcept;
+
+   // Aplanar: priorizar campos de base sobre wrapper, conservar extras del wrapper (ej. referencias)
+   return { ...m, ...base, concepto };
+ };
 const DEFAULT_PAGINATION = {
   page: 1,
   limit: 10,
@@ -78,8 +108,8 @@ export default function useAdminMovements(initial = {}) {
     staleTime: 30_000,
   });
 
-  // Datos derivados seguros
-  const movements = data?.movements || [];
+  // Datos derivados seguros (normalizar campos como 'concepto')
+  const movements = (data?.movements || []).map(normalizeMovement);
   const paginationInfo = data?.pagination || {
     page: pagination.page,
     limit: pagination.limit,
@@ -122,7 +152,9 @@ export default function useAdminMovements(initial = {}) {
   }, []);
 
   const getMovementDetail = useCallback(async (movementId) => {
-    return MovementService.getMovement(movementId);
+    // Pedir relacionados para que el modal tenga Usuario/Subasta completos sin retraso
+    const m = await MovementService.getMovement(movementId, { include: 'user,auction,guarantee,refund' });
+    return normalizeMovement(m);
   }, []);
 
   // Acciones admin

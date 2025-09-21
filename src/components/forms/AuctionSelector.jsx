@@ -75,11 +75,10 @@ export default function AuctionSelector({ value, onChange, onNext, disabled = fa
             return (
               <label
                 key={a.id}
-                className={`block p-4 border rounded-lg cursor-pointer transition-colors ${
-                  value?.id === a.id
+                className={`block p-4 border rounded-lg cursor-pointer transition-colors ${value?.id === a.id
                     ? 'border-primary-500 bg-primary-50'
                     : 'border-border hover:border-primary-300'
-                }`}
+                  }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
@@ -93,7 +92,9 @@ export default function AuctionSelector({ value, onChange, onNext, disabled = fa
                         disabled={disabled}
                       />
                       <div className="font-semibold text-text-primary">
-                        {a?.asset?.marca ? `${a.asset.marca} ${a.asset.modelo ?? ''}`.trim() : `Subasta ${a.id}`}
+                        {a?.asset?.marca
+                          ? `${a.asset.marca} ${a.asset.modelo ?? ''} / ${a.asset.placa ?? ''}`.trim()
+                          : `Subasta ${a.id}`}
                       </div>
                     </div>
                     <div className="text-xs text-text-secondary mt-1">
@@ -101,9 +102,6 @@ export default function AuctionSelector({ value, onChange, onNext, disabled = fa
                       <span className="font-medium text-text-primary">
                         {formatCurrency(montoOferta)}
                       </span>
-                      {a?.asset?.placa && (
-                        <> • Placa: <span className="font-medium">{a.asset.placa}</span></>
-                      )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">

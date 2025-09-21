@@ -9,6 +9,8 @@ import AuctionCard from '../../components/ui/AuctionCard';
 import { useForm } from 'react-hook-form';
 import useAuctions from '../../hooks/useAuctions';
 import { showToast } from '../../utils/toast';
+import { FaPlus } from 'react-icons/fa';
+
 
 function AuctionManagement() {
   const navigate = useNavigate();
@@ -41,12 +43,9 @@ function AuctionManagement() {
     handleSubmit,
     reset,
     formState: { errors, isValid },
-    watch,
   } = useForm({
     mode: 'onChange',
     defaultValues: {
-      fecha_inicio: '',
-      fecha_fin: '',
       placa: '',
       empresa_propietaria: '',
       marca: '',
@@ -56,28 +55,12 @@ function AuctionManagement() {
     },
   });
 
-  const fechaInicio = watch('fecha_inicio');
   
 
   const onCreateAuction = async (data) => {
     try {
-      // Validaciones de fechas
-      const fi = new Date(data.fecha_inicio);
-      const ff = new Date(data.fecha_fin);
-      if (isNaN(fi.getTime()) || isNaN(ff.getTime())) {
-        showToast.error('Fechas inválidas');
-        return;
-      }
-      // Solo validar que la fecha fin sea posterior a la fecha de inicio
-      if (ff <= fi) {
-        showToast.error('La fecha fin debe ser posterior a la fecha de inicio');
-        return;
-      }
-
-      // Payload según DocumentacionAPI
+      // Payload actualizado: solo datos del activo (sin fechas)
       const payload = {
-        fecha_inicio: fi.toISOString(),
-        fecha_fin: ff.toISOString(),
         asset: {
           placa: data.placa.trim(),
           empresa_propietaria: data.empresa_propietaria.trim(),
@@ -122,7 +105,8 @@ function AuctionManagement() {
           </p>
         </div>
 
-        <Button variant="primary" onClick={() => setShowCreate(true)}>
+        <Button className="gap-2" variant="primary" onClick={() => setShowCreate(true)}>
+          <FaPlus />
           Nueva Subasta
         </Button>
       </div>
@@ -270,24 +254,8 @@ function AuctionManagement() {
         title="Crear Nueva Subasta"
         size="xl"
       >
-        <form onSubmit={handleSubmit(onCreateAuction)} className="space-y-4">
+        <form onSubmit={handleSubmit(onCreateAuction)} className="space-y-4 p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Fechas */}
-            <Input
-              label="Fecha Inicio"
-              type="datetime-local"
-              required
-              {...register('fecha_inicio', { required: 'Fecha de inicio es requerida' })}
-              error={errors.fecha_inicio?.message}
-            />
-            <Input
-              label="Fecha Fin"
-              type="datetime-local"
-              required
-              min={fechaInicio}
-              {...register('fecha_fin', { required: 'Fecha fin es requerida' })}
-              error={errors.fecha_fin?.message}
-            />
 
             {/* Activo */}
             <Input

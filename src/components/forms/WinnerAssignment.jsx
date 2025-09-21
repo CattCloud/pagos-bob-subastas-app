@@ -35,7 +35,6 @@ export default function WinnerAssignment({
     defaultValues: {
       user_id: '',
       monto_oferta: '',
-      fecha_oferta: '',
       fecha_limite_pago: ''
     }
   });
@@ -88,20 +87,10 @@ export default function WinnerAssignment({
       return;
     }
 
-    const fechaOferta = new Date(data.fecha_oferta);
-    const fechaInicio = new Date(auction.fecha_inicio);
-    const fechaFin = new Date(auction.fecha_fin);
-
-    if (fechaOferta < fechaInicio || fechaOferta > fechaFin) {
-      alert('La fecha de oferta debe estar entre el inicio y fin de la subasta');
-      return;
-    }
-
-    // Preparar payload - user_id como string (CUID)
+    // Preparar payload (Guarantee) - user_id como string (CUID)
     const payload = {
       user_id: userId,
       monto_oferta: monto,
-      fecha_oferta: fechaOferta.toISOString(),
       ...(showLimitePago && data.fecha_limite_pago ? {
         fecha_limite_pago: new Date(data.fecha_limite_pago).toISOString()
       } : {})
@@ -119,7 +108,7 @@ export default function WinnerAssignment({
   ];
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 ${className}`}>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 p-4 ${className}`}>
       {/* Información de la subasta */}
       <Card variant="info" padding="sm">
         <div className="flex items-center gap-3">
@@ -182,31 +171,6 @@ export default function WinnerAssignment({
           error={errors.monto_oferta?.message}
         />
 
-        <Input
-          label="Fecha de Oferta"
-          type="datetime-local"
-          required
-          min={auction?.fecha_inicio?.slice(0, 16)} // Límite inferior: inicio de subasta
-          max={auction?.fecha_fin?.slice(0, 16)}     // Límite superior: fin de subasta
-          disabled={isSubmitting}
-          {...register('fecha_oferta', {
-            required: 'Fecha de oferta es requerida',
-            validate: (value) => {
-              const fechaOferta = new Date(value);
-              const fechaInicio = new Date(auction?.fecha_inicio);
-              const fechaFin = new Date(auction?.fecha_fin);
-              
-              if (fechaOferta < fechaInicio) {
-                return 'La fecha debe ser posterior al inicio de la subasta';
-              }
-              if (fechaOferta > fechaFin) {
-                return 'La fecha debe ser anterior al fin de la subasta';
-              }
-              return true;
-            }
-          })}
-          error={errors.fecha_oferta?.message}
-        />
       </div>
 
       {/* Cálculo automático de garantía */}
@@ -219,7 +183,7 @@ export default function WinnerAssignment({
                 Monto Garantía (8%): {formatCurrency(montoGarantia)}
               </p>
               <p className="text-xs text-text-secondary">
-                Calculado automáticamente según RN02
+                Calculado automáticamente según requisitos
               </p>
             </div>
           </div>

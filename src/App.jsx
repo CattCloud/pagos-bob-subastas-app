@@ -12,7 +12,6 @@ import ClientLayout from './components/layout/ClientLayout';
 import AdminLayout from './components/layout/AdminLayout';
 
 // Páginas cliente
-import MyGuarantees from './pages/client/MyGuarantees';
 import MyBalance from './pages/client/MyBalance';
 import TransactionHistory from './pages/client/TransactionHistory';
 import PaymentRegistration from './pages/client/PaymentRegistration';
@@ -21,6 +20,7 @@ import RefundDetail from './pages/client/RefundDetail';
 import Notifications from './pages/client/Notifications';
 
 // Páginas admin
+import AdminDashboard from './pages/admin/AdminDashboard';
 import PaymentValidation from './pages/admin/PaymentValidation';
 import AuctionManagement from './pages/admin/AuctionManagement';
 import CompetitionResults from './pages/admin/CompetitionResults';
@@ -56,7 +56,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<MyGuarantees />} />
+              <Route index element={<Navigate to="transactions" replace />} />
               <Route path="balance" element={<MyBalance />} />
               <Route path="transactions" element={<TransactionHistory />} />
               <Route path="payment" element={<PaymentRegistration />} />
@@ -74,7 +74,8 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<PaymentValidation />} />
+              <Route index element={<AdminDashboard />} />
+              <Route path="payments" element={<PaymentValidation />} />
               <Route path="auctions" element={<AuctionManagement />} />
               <Route path="auctions/:auctionId" element={<AuctionDetail />} />
               <Route path="competition" element={<CompetitionResults />} />

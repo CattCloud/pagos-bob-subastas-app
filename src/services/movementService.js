@@ -14,7 +14,7 @@ export class MovementService {
   /**
    * Obtener movimientos de un usuario con filtros y paginación
    * @param {string} userId
-   * @param {object} params { page, limit, tipo_especifico, estado, fecha_desde, fecha_hasta, search, sort }
+   * @param {object} params { page, limit, tipo_especifico, estado, fecha_desde, fecha_hasta, search, sort, include }
    */
   static async getUserMovements(userId, params = {}) {
     try {
@@ -27,6 +27,13 @@ export class MovementService {
       if (params.fecha_hasta) query.set('fecha_hasta', params.fecha_hasta);
       if (params.search) query.set('search', params.search);
       if (params.sort) query.set('sort', params.sort);
+
+      // Solicitar datos relacionados para render inmediato en UI (opt-in backend)
+      const includeParam = params.include ?? 'user,auction,guarantee,refund';
+      if (includeParam) {
+        const includeValue = Array.isArray(includeParam) ? includeParam.join(',') : includeParam;
+        query.set('include', includeValue);
+      }
 
       const qs = query.toString();
       const endpoint = qs ? `/users/${userId}/movements?${qs}` : `/users/${userId}/movements`;
@@ -45,7 +52,7 @@ export class MovementService {
 
   /**
    * Obtener lista global de movimientos (Admin)
-   * Filtros compatibles con DocumentacionAPI: tipo_especifico, estado, fecha_desde, fecha_hasta, page, limit
+   * Filtros compatibles con DocumentacionAPI: tipo_especifico, estado, fecha_desde, fecha_hasta, page, limit, include (CSV: auction,user,refund,guarantee)
    * @param {object} params
    */
   static async getMovements(params = {}) {
@@ -59,6 +66,13 @@ export class MovementService {
       if (params.fecha_hasta) query.set('fecha_hasta', params.fecha_hasta);
       if (params.search) query.set('search', params.search);
       if (params.sort) query.set('sort', params.sort);
+
+      // Solicitar datos relacionados para render inmediato en UI (opt-in backend)
+      const includeParam = params.include ?? 'user,auction,guarantee,refund';
+      if (includeParam) {
+        const includeValue = Array.isArray(includeParam) ? includeParam.join(',') : includeParam;
+        query.set('include', includeValue);
+      }
 
       const qs = query.toString();
       const endpoint = qs ? `/movements?${qs}` : `/movements`;
@@ -78,9 +92,21 @@ export class MovementService {
    * Obtener detalle de un movimiento
    * @param {string} movementId
    */
-  static async getMovement(movementId) {
+  static async getMovement(movementId, params = {}) {
     try {
-      const response = await apiService.get(`/movements/${movementId}`);
+      const query = new URLSearchParams();
+
+      // Opt-in include para enriquecer el detalle con relacionados
+      const includeParam = params.include ?? 'user,auction,guarantee,refund';
+      if (includeParam) {
+        const includeValue = Array.isArray(includeParam) ? includeParam.join(',') : includeParam;
+        query.set('include', includeValue);
+      }
+
+      const qs = query.toString();
+      const endpoint = qs ? `/movements/${movementId}?${qs}` : `/movements/${movementId}`;
+
+      const response = await apiService.get(endpoint);
       if (response.success && response.data) {
         return response.data.movement || response.data;
       }

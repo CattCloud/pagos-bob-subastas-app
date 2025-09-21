@@ -83,12 +83,6 @@ export default function AuctionDetail() {
             icon: FaClock,
             onClick: () => showToast.info('Función en desarrollo'),
           },
-          {
-            label: 'Ver Pago Registrado',
-            variant: 'info',
-            icon: FaFileInvoice,
-            onClick: () => navigate('/admin-subastas'),
-          }
         );
         break;
         
@@ -243,6 +237,7 @@ export default function AuctionDetail() {
 
   const stateConfig = AUCTION_STATES[auction.estado] || AUCTION_STATES.activa;
   const actionButtons = getActionButtons(auction);
+  const guarantee = auction.guarantee || auction.offer || auction.offer_details || null;
 
   return (
     <div className="space-y-6">
@@ -253,7 +248,7 @@ export default function AuctionDetail() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold text-text-primary">
-            Detalle de Subasta #{String(auction.id).slice(-8)}
+            Detalle de Subasta 
           </h1>
           <p className="text-text-secondary">
             {auction.asset?.marca} {auction.asset?.modelo} {auction.asset?.['año']} — {auction.asset?.placa}
@@ -279,13 +274,15 @@ export default function AuctionDetail() {
               </div>
 
               <div>
-                <p className="text-sm text-text-secondary">Fechas de Subasta</p>
+                <p className="text-sm text-text-secondary">Tiempos</p>
                 <p className="text-sm text-text-primary">
-                  <strong>Inicio:</strong> {formatDate(auction.fecha_inicio, { includeTime: true })}
+                  <strong>Creado:</strong> {formatDate(auction.created_at, { includeTime: true })}
                 </p>
-                <p className="text-sm text-text-primary">
-                  <strong>Fin:</strong> {formatDate(auction.fecha_fin, { includeTime: true })}
-                </p>
+                {auction.fecha_limite_pago && (
+                  <p className="text-sm text-text-primary">
+                    <strong>Límite de Pago:</strong> {formatDate(auction.fecha_limite_pago, { includeTime: true })}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -331,21 +328,13 @@ export default function AuctionDetail() {
                 <div>
                   <p className="text-sm text-text-secondary">Monto de Oferta</p>
                   <p className="text-lg font-bold text-text-primary">
-                    {auction.offer?.monto_oferta ? formatCurrency(auction.offer.monto_oferta) : '—'}
+                    {guarantee?.monto_oferta ? formatCurrency(guarantee.monto_oferta) : '—'}
                   </p>
                   <p className="text-sm text-success">
-                    Garantía (8%): {auction.offer?.monto_garantia ? formatCurrency(auction.offer.monto_garantia) : '—'}
+                    Garantía (8%): {guarantee?.monto_garantia ? formatCurrency(guarantee.monto_garantia) : '—'}
                   </p>
                 </div>
 
-                {auction.fecha_limite_pago && (
-                  <div>
-                    <p className="text-sm text-text-secondary">Fecha Límite de Pago</p>
-                    <p className="text-sm text-text-primary">
-                      {formatDate(auction.fecha_limite_pago, { includeTime: true })}
-                    </p>
-                  </div>
-                )}
 
                 <div>
                   <p className="text-sm text-text-secondary">Estado del Pago</p>
@@ -368,14 +357,7 @@ export default function AuctionDetail() {
 
         {/* Sidebar con acciones */}
         <div className="space-y-4">
-          {/* Estado actual */}
-          <Card variant="outlined" padding="sm">
-            <div className="text-center">
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${stateConfig.bgColor} ${stateConfig.color}`}>
-                {stateConfig.label}
-              </div>
-            </div>
-          </Card>
+
 
           {/* Botones de acción contextuales */}
           <Card>

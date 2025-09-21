@@ -1,7 +1,8 @@
-import { FaTimes, FaDownload, FaInfoCircle, FaMoneyBill, FaHashtag, FaCalendarAlt, FaCheck, FaTimesCircle } from 'react-icons/fa';
+import { FaDownload, FaInfoCircle, FaMoneyBill, FaHashtag, FaCalendarAlt, FaCheck, FaTimesCircle, FaUser, FaIdCard, FaCar, FaCreditCard } from 'react-icons/fa';
 import Modal from '../Modal';
 import Button from '../Button';
 import { formatCurrency, formatDate } from '../../../utils/formatters';
+import useAuth from '../../../hooks/useAuth';
 
 function Row({ icon, label, value }) {
   return (
@@ -29,6 +30,9 @@ export default function TransactionDetail({
   isApproving = false,
   isRejecting = false,
 }) {
+  const { user } = useAuth();
+  const isAdmin = user?.user_type === 'admin';
+
   if (!movement) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} title="Detalle de Transacción">
@@ -41,7 +45,6 @@ export default function TransactionDetail({
   }
 
   const {
-    id,
     tipo_movimiento_general,
     tipo_movimiento_especifico,
     monto,
@@ -50,17 +53,64 @@ export default function TransactionDetail({
     concepto,
     numero_operacion,
     created_at,
-    fecha_resolucion,
   } = movement;
 
   const isEntrada = tipo_movimiento_general === 'entrada';
 
+  // Helpers
+  const pick = (obj, keys = []) => {
+    for (const k of keys) {
+      const v = k.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), obj);
+      if (v !== undefined && v !== null && v !== '') return v;
+    }
+    return '';
+  };
+
+  // Usuario (preferir related.user)
+  const ru = movement?.related?.user || {};
+  const userFirst = ru.first_name || pick(movement, ['user.first_name', 'cliente.first_name', 'owner.first_name', 'first_name', 'nombres']);
+  const userLast = ru.last_name || pick(movement, ['user.last_name', 'cliente.last_name', 'owner.last_name', 'last_name', 'apellidos']);
+  const userDocType = ru.document_type || pick(movement, ['user.document_type', 'cliente.document_type', 'owner.document_type', 'document_type']);
+  const userDocNumber = ru.document_number || pick(movement, ['user.document_number', 'cliente.document_number', 'owner.document_number', 'document_number']);
+  const userFullName = [userFirst, userLast].filter(Boolean).join(' ');
+  const userDocLine = userDocNumber ? `${userDocType ? userDocType + ' ' : ''}${userDocNumber}` : '';
+
+
+  // Subasta (preferir related.auction o related.auction.asset)
+  const ra = movement?.related?.auction || {};
+  const raAsset = ra.asset || ra;
+  const aMarca = raAsset?.marca || raAsset?.brand || pick(movement, ['auction.asset.marca', 'asset.marca', 'auction.asset.brand', 'asset.brand', 'marca', 'brand']);
+  const aModelo = raAsset?.modelo || raAsset?.model || pick(movement, ['auction.asset.modelo', 'asset.modelo', 'auction.asset.model', 'asset.model', 'modelo', 'model']);
+  const aAnio = raAsset?.['año'] || raAsset?.anio || raAsset?.year || pick(movement, ['auction.asset.año', 'asset.año', 'auction.asset.anio', 'asset.anio', 'auction.asset.year', 'asset.year', 'año', 'anio', 'year']);
+  const aPlaca = raAsset?.placa || raAsset?.plate || pick(movement, ['auction.asset.placa', 'asset.placa', 'auction.asset.plate', 'asset.plate', 'placa', 'plate']);
+  const vehiculoLine = aMarca + " " + aModelo + " " + aAnio + "--" + aPlaca
+
+  // Datos de pago
+  const tipoPago = pick(movement, ['tipo_pago', 'payment_type', 'details.tipo_pago', 'detalles.tipo_pago']);
+  const cuentaOrigen = pick(movement, ['numero_cuenta_origen', 'cuenta_origen', 'account_from', 'numero_cuenta']);
+  const fechaPago = pick(movement, ['fecha_pago', 'payment_date', 'fecha']) || created_at;
+
+  const displayConcept =
+    concepto ??
+    movement?.concept ??
+    movement?.descripcion ??
+    movement?.description ??
+    movement?.glosa ??
+    movement?.detalle ??
+    movement?.metadata?.concepto ??
+    movement?.metadata?.description ??
+    movement?.details?.concepto ??
+    movement?.details?.description ??
+    '';
+
+  const conceptText = displayConcept || `Pago de garantía${numero_operacion ? ' - N° Operación ' + numero_operacion : ''}`;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} showCloseButton={false}>
+    <Modal isOpen={isOpen} onClose={onClose} size="xl" showCloseButton={false}>
       <Modal.Header>
         <div className="flex items-center justify-between w-full">
           <div>
-            <h3 className="text-lg font-semibold text-text-primary">Detalle de Transacción</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Detalle de Pago de Garantía</h3>
             <p className="text-xs text-text-secondary mt-0.5">
               {tipo_movimiento_general?.toUpperCase()} • {tipo_movimiento_especifico}
             </p>
@@ -69,58 +119,106 @@ export default function TransactionDetail({
       </Modal.Header>
 
       <Modal.Body>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Row
-            icon={<FaMoneyBill className="w-4 h-4" />}
-            label="Monto"
-            value={formatCurrency(monto, { currency: moneda })}
-          />
-          <Row
-            icon={<FaHashtag className="w-4 h-4" />}
-            label="N° de Operación"
-            value={numero_operacion || '—'}
-          />
-          <Row
-            icon={<FaCalendarAlt className="w-4 h-4" />}
-            label="Fecha de creación"
-            value={formatDate(created_at, { includeTime: true })}
-          />
-          <Row
-            icon={<FaCalendarAlt className="w-4 h-4" />}
-            label="Fecha de resolución"
-            value={fecha_resolucion ? formatDate(fecha_resolucion, { includeTime: true }) : '—'}
-          />
-          <div className="md:col-span-2">
-            <p className="text-xs text-text-secondary">Concepto</p>
-            <p className="text-sm font-medium text-text-primary">
-              {concepto || 'Sin concepto'}
-            </p>
-          </div>
-          <div className="md:col-span-2">
-            <p className="text-xs text-text-secondary">Estado</p>
-            <p
-              className={`inline-flex mt-1 text-xs font-medium px-2 py-1 rounded border ${
-                estado === 'validado'
-                  ? 'text-success bg-success/10 border-success/20'
-                  : estado === 'rechazado'
-                  ? 'text-error bg-error/10 border-error/20'
-                  : 'text-warning bg-warning/10 border-warning/20'
-              }`}
-            >
-              {estado}
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Sección izquierda: Usuario + Subasta */}
+          <div className="space-y-4">
+            <div className="p-4 rounded border border-border">
+              <div className="flex items-center gap-2 mb-2 text-text-secondary text-xs font-bold uppercase">
+                Usuario que realizó el pago
+              </div>
+              <div className="space-y-3">
+                <Row
+                  icon={<FaUser className="w-4 h-4" />}
+                  label="Nombre y Apellido"
+                  value={userFullName || '—'}
+                />
+                <Row
+                  icon={<FaIdCard className="w-4 h-4" />}
+                  label="Documento"
+                  value={userDocLine || '—'}
+                />
+              </div>
+            </div>
+
+            <div className="p-4 rounded border border-border">
+              <div className="flex items-center gap-2 mb-2 text-text-secondary text-xs font-bold uppercase">
+
+                Subasta relacionada
+              </div>
+              <div className="space-y-3">
+                <Row
+                  icon={<FaCar className="w-4 h-4" />}
+                  label="Vehiculo"
+                  value={vehiculoLine || '—'}
+                />
+
+              </div>
+            </div>
           </div>
 
-          {/* Información adicional compacta */}
-          <div className="md:col-span-2">
-            <p className="text-xs text-text-secondary">ID de Transacción</p>
-            <p className="text-xs font-mono text-text-primary mt-1 break-all">{id}</p>
+          {/* Sección derecha: Datos del pago */}
+          <div className="space-y-4">
+            <div className="p-4 rounded border border-border">
+              <div className='mb-2'>
+                <p
+                  className={`inline-flex text-xs font-medium px-2 py-1 rounded border ${estado === 'validado'
+                    ? 'text-success bg-success/10 border-success/20'
+                    : estado === 'rechazado'
+                      ? 'text-error bg-error/10 border-error/20'
+                      : 'text-warning bg-warning/10 border-warning/20'
+                    }`}
+                >
+                  {estado}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 mb-2 text-text-secondary text-xs font-bold uppercase">
+
+                Datos del pago
+              </div>
+              <div className="space-y-3">
+                <Row
+                  icon={<FaCreditCard className="w-4 h-4" />}
+                  label="Tipo de Pago"
+                  value={tipoPago || '—'}
+                />
+                <Row
+                  icon={<FaMoneyBill className="w-4 h-4" />}
+                  label="Monto pagado"
+                  value={formatCurrency(monto, { currency: moneda })}
+                />
+                <Row
+                  icon={<FaHashtag className="w-4 h-4" />}
+                  label="N° de Cuenta Origen"
+                  value={cuentaOrigen || '—'}
+                />
+                <Row
+                  icon={<FaHashtag className="w-4 h-4" />}
+                  label="N° de Operación"
+                  value={numero_operacion || '—'}
+                />
+                <Row
+                  icon={<FaCalendarAlt className="w-4 h-4" />}
+                  label="Fecha de pago"
+                  value={fechaPago ? formatDate(fechaPago, { includeTime: true }) : '—'}
+                />
+                <div>
+                  <p className="text-xs text-text-secondary">Concepto</p>
+                  <p className="text-sm font-medium text-text-primary break-words">
+                    {conceptText}
+                  </p>
+                </div>
+
+              </div>
+            </div>
           </div>
         </div>
       </Modal.Body>
 
       <Modal.Footer>
-        <div className="flex justify-between items-center w-full gap-2 flex-wrap">
+        <div className="flex justify-end items-center w-full gap-2 flex-wrap">
+          <Button variant="error" onClick={onClose}>
+            Cerrar
+          </Button>
           <div className="flex gap-2">
             <Button
               variant={isEntrada ? 'secondary' : 'outline'}
@@ -131,9 +229,8 @@ export default function TransactionDetail({
               Descargar Comprobante
             </Button>
           </div>
-          <div className="flex gap-2">
-            {estado === 'pendiente' && (
-              <>
+            {isAdmin && estado === 'pendiente' && (
+              <div className="flex gap-2">
                 <Button variant="success" onClick={onApprove} loading={isApproving}>
                   <FaCheck className="w-4 h-4 mr-2" />
                   Aprobar
@@ -142,12 +239,9 @@ export default function TransactionDetail({
                   <FaTimesCircle className="w-4 h-4 mr-2" />
                   Rechazar
                 </Button>
-              </>
+              </div>
             )}
-            <Button variant="outline" onClick={onClose}>
-              Cerrar
-            </Button>
-          </div>
+
         </div>
       </Modal.Footer>
     </Modal>

@@ -14,14 +14,14 @@ const Button = forwardRef(({
   const baseStyles = "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants = {
-    primary: "bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500",
-    secondary: "bg-secondary-600 hover:bg-secondary-700 text-white focus:ring-secondary-500", 
-    success: "bg-success hover:bg-success/80 text-white focus:ring-success",
-    warning: "bg-warning hover:bg-warning/80 text-white focus:ring-warning",
-    error: "bg-error hover:bg-error/80 text-white focus:ring-error",
-    outline: "border border-border hover:bg-bg-tertiary text-text-primary focus:ring-primary-500",
-    ghost: "hover:bg-bg-tertiary text-text-primary focus:ring-primary-500",
-    link: "text-primary-600 hover:text-primary-700 underline-offset-4 hover:underline focus:ring-primary-500"
+    primary: "bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500 cursor-pointer",
+    secondary: "bg-secondary-600 hover:bg-secondary-700 text-white focus:ring-secondary-500 cursor-pointer", 
+    success: "bg-success hover:bg-success/80 text-white focus:ring-success cursor-pointer",
+    warning: "bg-warning hover:bg-warning/80 text-white focus:ring-warning cursor-pointer",
+    error: "bg-error hover:bg-error/80 text-white focus:ring-error cursor-pointer",
+    outline: "border  border-border bg-bg-tertiary text-text-primary focus:ring-primary-500 cursor-pointer",
+    ghost: "hover:bg-bg-tertiary text-text-primary focus:ring-primary-500 cursor-pointer",
+    link: "text-primary-600 hover:text-primary-700 underline-offset-4 hover:underline focus:ring-primary-500 cursor-pointer"
   };
   
   const sizes = {
@@ -40,7 +40,7 @@ const Button = forwardRef(({
   `.trim();
   
   return (
-    <button 
+    <button  
       ref={ref}
       type={type}
       disabled={disabled || loading}

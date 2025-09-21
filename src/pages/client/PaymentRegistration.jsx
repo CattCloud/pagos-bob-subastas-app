@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FaCheckCircle, FaCircle, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaCheckCircle, FaCircle, FaCloudUploadAlt, FaDownload } from 'react-icons/fa';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import AuctionSelector from '../../components/forms/AuctionSelector';
@@ -166,7 +166,7 @@ export default function PaymentRegistration() {
         showToast.error('El monto no coincide con el 8% (RN02).');
         setStep(STEPS.PAYMENT);
       } else if ((err?.status === 422 || err?.status === 400) && (details?.field === 'fecha_pago' || err?.data?.errors?.fecha_pago || msgLower.includes('fecha'))) {
-        showToast.error('Fecha de pago inválida. Debe ser posterior al inicio de la subasta y no futura.');
+        showToast.error('Fecha de pago inválida. No debe ser futura.');
         setStep(STEPS.PAYMENT);
       } else {
         const fallback = err?.message || 'Error al registrar el pago. Verifica los datos e inténtalo nuevamente.';
@@ -184,8 +184,25 @@ export default function PaymentRegistration() {
       setSubmitting(false);
     }
   };
-
-  return (
+ 
+  // Descargar/visualizar el comprobante adjunto (cliente-side)
+  const handleDownloadSelectedVoucher = () => {
+    if (!voucherFile) return;
+    try {
+      const url = URL.createObjectURL(voucherFile);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = voucherFile.name || 'voucher';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Error al descargar comprobante adjunto:', e);
+    }
+  };
+ 
+   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -305,51 +322,108 @@ export default function PaymentRegistration() {
             <Card.Title>Confirmación</Card.Title>
             <Card.Subtitle>Verifica los datos antes de enviar</Card.Subtitle>
           </Card.Header>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 space-y-6">
+            {/* DATOS DEL USUARIO */}
+            <div className="p-4 border border-border rounded-lg">
+              <div className="text-xs font-semibold text-text-secondary uppercase mb-3">
+                Datos del Usuario
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-text-secondary">Nombre y Apellido</p>
+                  <p className="text-sm font-medium text-text-primary">
+                    {user?.first_name} {user?.last_name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">Documento</p>
+                  <p className="text-sm font-medium text-text-primary">
+                    {user?.document_type || '—'} {user?.document_number || ''}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">Email</p>
+                  <p className="text-sm font-medium text-text-primary">
+                    {user?.email || '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">Teléfono</p>
+                  <p className="text-sm font-medium text-text-primary">
+                    {user?.phone_number || '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* DATOS DEL VEHICULO SUBASTADO */}
+            <div className="p-4 border border-border rounded-lg">
+              <div className="text-xs font-semibold text-text-secondary uppercase mb-3">
+                Datos del Vehículo Subastado
+              </div>
               <div>
-                <p className="text-xs text-text-secondary">Subasta</p>
+                <p className="text-xs text-text-secondary">Marca Modelo Año / Placa</p>
                 <p className="text-sm font-medium text-text-primary">
                   {selectedAuction?.asset?.marca
-                    ? `${selectedAuction.asset.marca} ${selectedAuction.asset.modelo ?? ''}`.trim()
+                    ? `${selectedAuction.asset.marca || ''} ${selectedAuction.asset.modelo || ''} ${selectedAuction.asset?.['año'] || selectedAuction.asset?.anio || selectedAuction.asset?.year || ''}`.trim()
                     : `Subasta ${selectedAuction?.id}`}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-text-secondary">Oferta ganadora</p>
-                <p className="text-sm font-medium text-text-primary">
-                  {formatCurrency(selectedAuction?.monto_oferta ?? selectedAuction?.offer_amount ?? 0)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-text-secondary">Monto a pagar (8%)</p>
-                <p className="text-sm font-medium text-text-primary">
-                  {formatCurrency(expectedGuarantee)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-text-secondary">Tipo de pago</p>
-                <p className="text-sm font-medium text-text-primary">
-                  {paymentData?.tipo_pago}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-text-secondary">N° Operación</p>
-                <p className="text-sm font-medium text-text-primary">
-                  {paymentData?.numero_operacion}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-text-secondary">Fecha de pago</p>
-                <p className="text-sm font-medium text-text-primary">
-                  {paymentData?.fecha_pago}
+                  {selectedAuction?.asset?.placa ? ` / ${selectedAuction.asset.placa}` : ''}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-text-secondary">
-              <FaCloudUploadAlt className="w-4 h-4" />
-              Se enviará el comprobante adjuntado junto con la información de pago para validación.
+            {/* DATOS DE PAGO INGRESADOS */}
+            <div className="p-4 border border-border rounded-lg">
+              <div className="text-xs font-semibold text-text-secondary uppercase mb-3">
+                Datos de Pago Ingresados
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-text-secondary">Tipo de pago</p>
+                  <p className="text-sm font-medium text-text-primary">{paymentData?.tipo_pago || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">Monto (8%)</p>
+                  <p className="text-sm font-medium text-text-primary">{formatCurrency(expectedGuarantee)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">Moneda</p>
+                  <p className="text-sm font-medium text-text-primary">{paymentData?.moneda || 'USD'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">N° Cuenta Origen</p>
+                  <p className="text-sm font-medium text-text-primary">{paymentData?.numero_cuenta_origen || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">N° Operación</p>
+                  <p className="text-sm font-medium text-text-primary">{paymentData?.numero_operacion || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">Fecha de pago</p>
+                  <p className="text-sm font-medium text-text-primary">{paymentData?.fecha_pago || '—'}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-xs text-text-secondary">Concepto</p>
+                  <p className="text-sm font-medium text-text-primary break-words">{paymentData?.concepto || '—'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between flex-wrap gap-2 text-sm text-text-secondary">
+              <div className="flex items-center gap-2">
+                <FaCloudUploadAlt className="w-4 h-4" />
+                Se enviará el comprobante adjuntado junto con la información de pago para validación.
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleDownloadSelectedVoucher}
+                disabled={!voucherFile}
+                title="Descargar/visualizar comprobante adjunto"
+              >
+                <FaDownload className="w-4 h-4 mr-2" />
+                Descargar comprobante adjunto
+              </Button>
             </div>
 
             <div className="flex justify-between">

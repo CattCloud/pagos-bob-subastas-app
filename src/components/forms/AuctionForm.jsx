@@ -16,12 +16,9 @@ export default function AuctionForm({
     register,
     handleSubmit,
     formState: { errors, isValid },
-    watch,
   } = useForm({
     mode: 'onChange',
     defaultValues: {
-      fecha_inicio: '',
-      fecha_fin: '',
       placa: '',
       empresa_propietaria: '',
       marca: '',
@@ -31,27 +28,10 @@ export default function AuctionForm({
     },
   });
 
-  const fechaInicio = watch('fecha_inicio');
 
   const handleFormSubmit = (data) => {
-    // Validaciones adicionales
-    const fi = new Date(data.fecha_inicio);
-    const ff = new Date(data.fecha_fin);
-
-    if (isNaN(fi.getTime()) || isNaN(ff.getTime())) {
-      alert('Fechas inválidas');
-      return;
-    }
-    // Solo validar que la fecha fin sea posterior a la fecha de inicio
-    if (ff <= fi) {
-      alert('La fecha fin debe ser posterior a la fecha de inicio');
-      return;
-    }
-
-    // Payload según DocumentacionAPI
+    // Payload actualizado: sólo datos del activo (sin fechas inicio/fin)
     const payload = {
-      fecha_inicio: fi.toISOString(),
-      fecha_fin: ff.toISOString(),
       asset: {
         placa: data.placa.trim(),
         empresa_propietaria: data.empresa_propietaria.trim(),
@@ -61,36 +41,13 @@ export default function AuctionForm({
         ...(data.descripcion?.trim() ? { descripcion: data.descripcion.trim() } : {}),
       },
     };
-
     onSubmit?.(payload);
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 ${className}`}>
-      {/* Sección: Datos de la Subasta */}
-      <div>
-        <h3 className="text-lg font-semibold text-text-primary mb-3">Datos de la Subasta</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="Fecha Inicio"
-            type="datetime-local"
-            required
-            {...register('fecha_inicio', { required: 'Fecha de inicio es requerida' })}
-            error={errors.fecha_inicio?.message}
-          />
-          <Input
-            label="Fecha Fin"
-            type="datetime-local"
-            required
-            min={fechaInicio}
-            {...register('fecha_fin', { required: 'Fecha fin es requerida' })}
-            error={errors.fecha_fin?.message}
-          />
-        </div>
-      </div>
-
+    <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4  ${className}`}>
       {/* Sección: Datos del Activo */}
-      <div>
+      <div >
         <h3 className="text-lg font-semibold text-text-primary mb-3">Datos del Activo</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input

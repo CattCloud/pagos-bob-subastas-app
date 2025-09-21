@@ -1,4 +1,6 @@
 import { formatRelativeDate } from '../../utils/formatters';
+import { FaTrophy, FaInfoCircle, FaFileInvoice } from "react-icons/fa";
+import Button from './Button';
 
 const AUCTION_STATES = {
   activa: {
@@ -64,107 +66,148 @@ const AUCTION_STATES = {
  * @param {Array} actions - Array de botones de acción
  * @param {boolean} compact - Versión compacta
  */
-export default function AuctionCard({ 
-  auction, 
+export default function AuctionCard({
+  auction,
   onClick,
   actions = [],
-  compact = false 
+  compact = false
 }) {
   const stateConfig = AUCTION_STATES[auction.estado] || AUCTION_STATES.activa;
 
   return (
-    <div 
+    <div
       className={`
-        p-4 border rounded-lg transition-colors bg-white hover:shadow-md
-        ${onClick ? 'cursor-pointer' : ''}
-        ${compact ? 'p-3' : 'p-4'}
-      `}
+    p-5 rounded-xl border border-border bg-white shadow-sm hover:shadow-lg transition
+    ${onClick ? "cursor-pointer" : ""}
+    ${compact ? "p-4" : "p-5"}
+  `}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          {/* Estado */}
-          <div className="flex items-center gap-2 mb-2">
-            <span 
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
+        {/* Bloque de información principal */}
+        <div className="flex-1 min-w-0 space-y-3">
+
+          {/* Estado con badge */}
+          <div className="flex items-center gap-2">
+            <span
               className={`
-                px-2 py-0.5 text-xs rounded-full border
-                ${stateConfig.bgColor} ${stateConfig.color} ${stateConfig.borderColor}
-              `}
+            px-3 py-1 text-xs font-semibold rounded-full border shadow-sm
+            ${stateConfig.bgColor} ${stateConfig.color} ${stateConfig.borderColor}
+          `}
             >
               {stateConfig.label}
             </span>
           </div>
 
-          {/* Información principal */}
-          <h3 className="text-lg font-semibold text-text-primary mb-1">
-            {auction.asset?.marca} {auction.asset?.modelo} {auction.asset?.['año']} — {auction.asset?.placa}
+          {/* Título principal */}
+          <h3 className="text-xl font-bold text-text-primary leading-snug">
+            {auction.asset?.marca} {auction.asset?.modelo} {auction.asset?.["año"]} —{auction.asset?.placa}
           </h3>
 
           {/* Empresa propietaria */}
           {auction.asset?.empresa_propietaria && (
-            <div className="text-sm text-text-secondary mb-1">
-              {auction.asset.empresa_propietaria}
+            <div className="flex items-center text-sm text-text-secondary gap-2">
+              <span className="font-medium text-text-primary">Empresa Propietaria:</span>
+              <span>{auction.asset.empresa_propietaria}</span>
             </div>
           )}
-
-          {/* Fechas */}
-          <div className="text-sm text-text-secondary mb-1">
-            Inicio: {auction.fecha_inicio ? formatRelativeDate(auction.fecha_inicio) : '—'} | 
-            Fin: {auction.fecha_fin ? formatRelativeDate(auction.fecha_fin) : '—'}
-          </div>
-
           {/* Ganador */}
           {auction.winner ? (
-            <div className="text-sm">
-              Ganador: <span className="font-medium text-text-primary">{auction.winner?.name || '—'}</span>
+            <div className="flex items-center text-sm gap-2">
+              <FaTrophy className="text-success w-4 h-4" />
+              <span>
+                Ganador:{" "}
+                <span className="font-semibold text-text-primary">
+                  {auction.winner?.name || "—"}
+                </span>
+              </span>
             </div>
           ) : (
-            <div className="text-sm text-text-muted">Sin ganador asignado</div>
-          )}
-
-          {/* Descripción si existe y no es compacto */}
-          {!compact && auction.asset?.descripcion && (
-            <div className="text-sm text-text-secondary mt-2">
-              {auction.asset.descripcion.length > 100 
-                ? `${auction.asset.descripcion.slice(0, 100)}...` 
-                : auction.asset.descripcion
-              }
+            <div className="flex items-center text-sm gap-2 text-text-muted">
+              <FaInfoCircle className="w-4 h-4" />
+              Sin ganador asignado
             </div>
+          )}
+          {/* Fechas */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-text-secondary">
+            <span className="flex items-center gap-1">
+              <span className="font-medium text-text-primary">Creado:{" "}</span>
+              {auction.created_at ? formatRelativeDate(auction.created_at) : "No definido"}
+            </span>
+            <span className="flex items-center gap-1 sm:ml-4">
+              <span className="font-medium text-text-primary">Límite pago:{" "}</span>
+              {auction.fecha_limite_pago
+                ? formatRelativeDate(auction.fecha_limite_pago)
+                : "No definido"}
+            </span>
+          </div>
+
+
+
+          {/* Descripción */}
+          {!compact && auction.asset?.descripcion && (
+            <p className="text-sm text-text-secondary leading-relaxed">
+              {auction.asset.descripcion.length > 100
+                ? `${auction.asset.descripcion.slice(0, 100)}...`
+                : auction.asset.descripcion}
+            </p>
           )}
         </div>
 
-        {/* Botones de acción */}
+        {/* Acciones */}
         {actions.length > 0 && (
-          <div className="shrink-0 flex items-center gap-2">
-            {actions.map((action, index) => (
-              <button
-                key={index}
-                className={`
-                  px-3 py-1.5 text-sm font-medium rounded-md transition-colors
-                  ${action.variant === 'primary' 
-                    ? 'bg-primary-500 hover:bg-primary-600 text-white' 
-                    : action.variant === 'success'
-                    ? 'bg-success hover:bg-success/80 text-white'
-                    : action.variant === 'warning'
-                    ? 'bg-warning hover:bg-warning/80 text-white'
-                    : action.variant === 'error'
-                    ? 'bg-error hover:bg-error/80 text-white'
-                    : 'border border-border hover:bg-bg-secondary text-text-primary'
-                  }
-                  ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          <div className="flex flex-col gap-2 shrink-0 md:text-right">
+            {actions.map((action, index) => {
+              const isDetail = /detalle/i.test(String(action?.label || action?.title || ''));
+              const handleClick = (e) => {
+                e.stopPropagation();
+                if (!action?.disabled && action?.onClick) {
+                  action.onClick(auction);
+                }
+              };
+
+              if (isDetail) {
+                return (
+                  <Button
+                    key={index}
+                    size="sm"
+                    variant="secondary"
+                    onClick={handleClick}
+                    title={action.title || action.label || 'Ver detalle de subasta'}
+                    className="w-full md:w-auto"
+                  >
+                    <FaFileInvoice className="w-4 h-4 mr-2" />
+                    {action.label || 'Ver Detalle'}
+                  </Button>
+                );
+              }
+
+              return (
+                <button
+                  key={index}
+                  className={`
+                  flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg shadow-sm
+                  ${action.variant === "primary"
+                      ? "bg-primary-500 hover:bg-primary-600 text-white"
+                      : action.variant === "success"
+                        ? "bg-success hover:bg-success/80 text-white"
+                        : action.variant === "warning"
+                          ? "bg-warning hover:bg-warning/80 text-white"
+                          : action.variant === "error"
+                            ? "bg-error hover:bg-error/80 text-white"
+                            : "border border-border hover:bg-gray-50 text-text-primary"
+                    }
+                  ${action.disabled ? "opacity-50 cursor-not-allowed" : ""}
                 `}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!action.disabled && action.onClick) {
-                    action.onClick(auction);
-                  }
-                }}
-                disabled={action.disabled}
-                title={action.title || action.label}
-              >
-                {action.label}
-              </button>
-            ))}
+                  onClick={handleClick}
+                  disabled={action.disabled}
+                  title={action.title || action.label}
+                >
+                  {action.icon && <action.icon className="w-4 h-4" />}
+                  {action.label}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

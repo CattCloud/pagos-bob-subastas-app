@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import TransactionFilters from '../../components/ui/transactions/TransactionFilters';
@@ -23,7 +23,6 @@ function PaymentValidation() {
     pagination,
     filters,
     updateFilters,
-    resetFilters,
     setPage,
     setLimit,
     isLoading,
@@ -38,7 +37,7 @@ function PaymentValidation() {
   } = useAdminMovements({
     filters: {
       tipo_especifico: 'pago_garantia',
-      estado: 'pendiente',
+      estado: '',
     },
     pagination: {
       page: 1,
@@ -173,15 +172,28 @@ function PaymentValidation() {
     }
   };
 
+  // Orden personalizado: pendiente -> validado -> resto (por fecha desc)
+  const sortedMovements = useMemo(() => {
+    const rank = (estado) => (estado === 'pendiente' ? 0 : estado === 'validado' ? 1 : 2);
+    return [...(movements || [])].sort((a, b) => {
+      const ra = rank(a?.estado || '');
+      const rb = rank(b?.estado || '');
+      if (ra !== rb) return ra - rb;
+      const da = new Date(a?.created_at || 0).getTime();
+      const db = new Date(b?.created_at || 0).getTime();
+      return db - da; // reciente primero
+    });
+  }, [movements]);
+
   // Render
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">Validación de Pagos</h1>
+          <h1 className="text-3xl font-bold text-text-primary">Pagos de Garantía</h1>
           <p className="text-text-secondary mt-1">
-            Revisa y valida pagos de garantía registrados por los clientes.
+            Consulta y gestiona todos los pagos de garantía del sistema.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -193,6 +205,7 @@ function PaymentValidation() {
 
       {/* Filtros */}
       <TransactionFilters
+        showType={false}
         value={{
           tipo_especifico: filters.tipo_especifico,
           estado: filters.estado,
@@ -204,7 +217,7 @@ function PaymentValidation() {
         }}
         onChange={(v) => {
           updateFilters({
-            tipo_especifico: v.tipo_especifico,
+            tipo_especifico: 'pago_garantia',
             estado: v.estado,
             fecha_desde: v.fecha_desde,
             fecha_hasta: v.fecha_hasta,
@@ -214,7 +227,15 @@ function PaymentValidation() {
           setLimit(v.limit);
         }}
         onReset={() => {
-          resetFilters();
+          updateFilters({
+            tipo_especifico: 'pago_garantia',
+            estado: '',
+            fecha_desde: '',
+            fecha_hasta: '',
+            search: '',
+            sort: 'created_at:desc',
+          });
+          setLimit(10);
         }}
         disabled={isLoading || isFetching}
       />
@@ -257,7 +278,7 @@ function PaymentValidation() {
 
           {!isLoading && !isError && movements.length > 0 && (
             <div className="space-y-3">
-              {movements.map((m) => (
+              {sortedMovements.map((m) => (
                 <TransactionCard key={m.id} movement={m} onDetail={() => handleOpenDetail(m.id)} />
               ))}
             </div>
