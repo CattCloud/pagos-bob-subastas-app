@@ -1,5 +1,6 @@
-import { FaWallet, FaUniversity , FaClock, FaCheckCircle, FaTimes, FaEye } from 'react-icons/fa';
+import { FaClock, FaCheckCircle, FaTimes, FaEye } from 'react-icons/fa';
 import { formatCurrency, formatRelativeDate } from '../../utils/formatters';
+import { FaUserTie, FaMoneyCheckAlt, FaGavel, FaExclamationTriangle, FaCalendarAlt, FaClipboardCheck } from "react-icons/fa";
 
 const REFUND_STATES = {
   solicitado: {
@@ -13,7 +14,6 @@ const REFUND_STATES = {
   confirmado: {
     label: 'Confirmado',
     color: 'text-info',
-    bgColor: 'bg-info/10', 
     borderColor: 'border-info/30',
     icon: FaCheckCircle,
     description: 'En proceso de transferencia/aplicación'
@@ -21,7 +21,6 @@ const REFUND_STATES = {
   procesado: {
     label: 'Completado',
     color: 'text-success',
-    bgColor: 'bg-success/10',
     borderColor: 'border-success/30',
     icon: FaCheckCircle,
     description: 'Reembolso completado exitosamente'
@@ -29,25 +28,13 @@ const REFUND_STATES = {
   rechazado: {
     label: 'Rechazado',
     color: 'text-error',
-    bgColor: 'bg-error/10',
+    
     borderColor: 'border-error/30',
     icon: FaTimes,
     description: 'Ver motivo en detalle'
   }
 };
 
-const REFUND_TYPES = {
-  mantener_saldo: {
-    label: 'Mantener Saldo',
-    icon: FaWallet,
-    color: 'text-primary-600'
-  },
-  devolver_dinero: {
-    label: 'Devolver Dinero',
-    icon: FaUniversity ,
-    color: 'text-secondary-600'
-  }
-};
 
 /**
  * Tarjeta de reembolso para listados (HU-REEM-04)
@@ -56,29 +43,49 @@ const REFUND_TYPES = {
  * - Click para ir a detalle
  */
 export default function RefundCard({ 
-  refund, 
+  refund,
   onClick,
   showClientInfo = false, // Para vista admin
-  compact = false 
+  compact = false
 }) {
   const {
     monto_solicitado,
-    tipo_reembolso,
     estado,
     motivo,
     created_at,
     fecha_respuesta_empresa,
     fecha_procesamiento,
-    // Para admin
-    user,
-    auction
   } = refund;
 
+  // Preferir datos enriquecidos por include=user,auction
+  const relatedUser = refund?.related?.user || refund?.user || null;
+  const relatedAuction = refund?.related?.auction || refund?.auction || null;
+
+  // Usuario (solo Admin: showClientInfo = true)
+  const userFirst = relatedUser?.first_name || '';
+  const userLast = relatedUser?.last_name || '';
+  const userDocType = relatedUser?.document_type || '';
+  const userDocNumber = relatedUser?.document_number || '';
+  const userFullName = [userFirst, userLast].filter(Boolean).join(' ');
+  const userDocLine = userDocNumber ? `${userDocType ? userDocType + ' ' : ''}${userDocNumber}` : '';
+
+  // Subasta (Admin y Cliente)
+  // Backend para refunds entrega auction con campos planos (marca, modelo, año, placa)
+  // pero soportamos fallback a auction.asset.* si existiera
+  const aMarca = relatedAuction?.marca || relatedAuction?.asset?.marca || '';
+  const aModelo = relatedAuction?.modelo || relatedAuction?.asset?.modelo || '';
+  const aAnio = (relatedAuction && (relatedAuction['año'] ?? relatedAuction?.anio ?? relatedAuction?.year))
+    || (relatedAuction?.asset && (relatedAuction.asset['año'] ?? relatedAuction.asset?.anio ?? relatedAuction.asset?.year))
+    || '';
+  const aPlaca = relatedAuction?.placa || relatedAuction?.asset?.placa || '';
+  const hasAuctionInfo = Boolean(aMarca || aModelo || aAnio || aPlaca);
+  const auctionLine = hasAuctionInfo
+    ? `${[aMarca, aModelo, aAnio].filter(Boolean).join(' ')}${aPlaca ? ` / ${aPlaca}` : ''}`
+    : '';
+
   const stateConfig = REFUND_STATES[estado] || REFUND_STATES.solicitado;
-  const typeConfig = REFUND_TYPES[tipo_reembolso] || REFUND_TYPES.mantener_saldo;
   
   const StateIcon = stateConfig.icon;
-  const TypeIcon = typeConfig.icon;
   
   const createdDate = created_at ? formatRelativeDate(created_at) : '—';
   const monto = Number(monto_solicitado || 0);
@@ -97,7 +104,7 @@ export default function RefundCard({
       `}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 ">
         <div className="flex-1 min-w-0">
           {/* Header con estado y tipo */}
           <div className="flex items-center gap-3 mb-2">
@@ -106,10 +113,6 @@ export default function RefundCard({
               <span className="font-semibold text-sm">{stateConfig.label}</span>
             </div>
             
-            <div className={`flex items-center gap-1 ${typeConfig.color}`}>
-              <TypeIcon className="w-4 h-4" />
-              <span className="text-sm">{typeConfig.label}</span>
-            </div>
 
             {isUrgent && (
               <span className="px-2 py-1 text-xs font-medium bg-warning text-white rounded-full">
@@ -125,23 +128,25 @@ export default function RefundCard({
               <p className="font-bold text-lg text-text-primary">{formatCurrency(monto)}</p>
             </div>
             
-            {showClientInfo && user && (
+            {showClientInfo && (userFullName || userDocLine) && (
               <div>
                 <p className="text-text-secondary">Cliente:</p>
                 <p className="font-medium text-text-primary">
-                  {user.first_name} {user.last_name}
+                  {userFullName || '—'}
                 </p>
-                <p className="text-xs text-text-muted">
-                  {user.document_type} {user.document_number}
-                </p>
+                {userDocLine && (
+                  <p className="text-xs text-text-muted">
+                    {userDocLine}
+                  </p>
+                )}
               </div>
             )}
 
-            {auction && (
+            {hasAuctionInfo && (
               <div className={showClientInfo ? 'md:col-span-2' : ''}>
                 <p className="text-text-secondary">Subasta:</p>
                 <p className="font-medium text-text-primary">
-                  {auction.asset?.marca} {auction.asset?.modelo} - {auction.asset?.placa}
+                  {auctionLine}
                 </p>
               </div>
             )}
@@ -183,10 +188,7 @@ export default function RefundCard({
           </div>
         </div>
 
-        {/* Indicador visual */}
-        <div className="shrink-0">
-          <FaEye className="w-4 h-4 text-text-muted" />
-        </div>
+
       </div>
     </div>
   );

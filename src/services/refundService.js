@@ -48,6 +48,11 @@ export class RefundService {
       if (filters.fecha_hasta) query.set('fecha_hasta', filters.fecha_hasta);
       if (filters.page) query.set('page', String(filters.page));
       if (filters.limit) query.set('limit', String(filters.limit));
+      // Enriquecer con datos mínimos relacionados para UI inmediata
+      const includeParam = filters.include ?? 'user,auction';
+      if (includeParam) {
+        query.set('include', Array.isArray(includeParam) ? includeParam.join(',') : includeParam);
+      }
 
       const qs = query.toString();
       const endpoint = qs ? `/refunds?${qs}` : '/refunds';
@@ -73,39 +78,18 @@ export class RefundService {
    */
   static async getRefund(refundId) {
     try {
-      // El backend no expone GET /refunds/:id.
-      // Debemos consultar GET /refunds y buscar el id dentro del arreglo "refunds".
-      const estadosAll = 'solicitado,confirmado,procesado,rechazado,cancelado';
-      let page = 1;
-      const limit = 50; // tamaño de página razonable
-      let found = null;
-      let totalPages = 1;
-  
-      while (!found && page <= totalPages) {
-        const query = new URLSearchParams();
-        query.set('estado', estadosAll);
-        query.set('page', String(page));
-        query.set('limit', String(limit));
-  
-        const endpoint = `/refunds?${query.toString()}`;
-        const response = await apiService.get(endpoint);
-        if (!(response?.success && response?.data)) {
-          throw new Error(response?.message || 'Error al obtener lista de reembolsos');
-        }
-  
-        const list = response.data.refunds || response.data || [];
-        const pagination = response.data.pagination || { page: page, total_pages: 1 };
-        totalPages = Number(pagination.total_pages || 1);
-  
-        found = list.find(r => r.id === refundId) || null;
-        if (!found) page += 1;
+      // Nuevo contrato: GET /refunds/:id con include opt-in
+      const query = new URLSearchParams();
+      const includeParam = 'user,auction';
+      query.set('include', includeParam);
+      const qs = query.toString();
+      const endpoint = qs ? `/refunds/${refundId}?${qs}` : `/refunds/${refundId}`;
+
+      const response = await apiService.get(endpoint);
+      if (response.success && response.data) {
+        return response.data.refund || response.data;
       }
-  
-      if (!found) {
-        throw new Error('Reembolso no encontrado');
-      }
-  
-      return found;
+      throw new Error(response.message || 'Error al obtener detalle de reembolso');
     } catch (error) {
       console.error('Error en getRefund:', error);
       throw error;
@@ -132,6 +116,11 @@ export class RefundService {
       if (filters.fecha_hasta) query.set('fecha_hasta', filters.fecha_hasta);
       if (filters.page) query.set('page', String(filters.page));
       if (filters.limit) query.set('limit', String(filters.limit));
+      // Enriquecer con relaciones para admin
+      const includeParam = filters.include ?? 'user,auction';
+      if (includeParam) {
+        query.set('include', Array.isArray(includeParam) ? includeParam.join(',') : includeParam);
+      }
 
       const qs = query.toString();
       const endpoint = qs ? `/refunds?${qs}` : '/refunds';

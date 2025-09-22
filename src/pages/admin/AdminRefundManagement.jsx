@@ -14,7 +14,6 @@ import { showToast } from '../../utils/toast';
 export default function AdminRefundManagement() {
   const [filters, setFilters] = useState({
     estado: 'todos',
-    tipo_reembolso: 'todos',
     search: ''
   });
 
@@ -89,28 +88,22 @@ export default function AdminRefundManagement() {
     if (!selectedRefund) return;
 
     try {
-      if (selectedRefund.tipo_reembolso === 'mantener_saldo') {
-        // Proceso simple sin archivo
-        await processRefund(selectedRefund.id, {});
-        showToast.success('Reembolso procesado exitosamente (saldo agregado)');
-      } else {
-        // devolver_dinero: requiere número de operación y voucher
-        if (!formData.numero_operacion.trim()) {
-          showToast.error('Número de operación es requerido para devolución de dinero');
-          return;
-        }
-
-        const form = new FormData();
-        form.append('tipo_transferencia', 'transferencia');
-        form.append('numero_operacion', formData.numero_operacion);
-        if (formData.voucher) {
-          form.append('voucher', formData.voucher, formData.voucher.name);
-        }
-
-        await processRefund(selectedRefund.id, form);
-        showToast.success('Reembolso procesado exitosamente (dinero transferido)');
+      // Nuevo flujo: único tipo = devolver_dinero
+      if (!formData.numero_operacion.trim()) {
+        showToast.error('Número de operación es requerido para procesar la devolución de dinero');
+        return;
       }
-      
+
+      const form = new FormData();
+      form.append('tipo_transferencia', 'transferencia');
+      form.append('numero_operacion', formData.numero_operacion);
+      if (formData.voucher) {
+        form.append('voucher', formData.voucher, formData.voucher.name);
+      }
+
+      await processRefund(selectedRefund.id, form);
+      showToast.success('Reembolso procesado exitosamente (dinero transferido)');
+
       closeModal();
       refetchAllRefunds();
     } catch (error) {
@@ -173,16 +166,7 @@ export default function AdminRefundManagement() {
             Procesar
           </Button>
         );
-      default:
-        return (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <FaEye className="w-4 h-4" />
-          </Button>
-        );
+      
     }
   };
 
@@ -255,16 +239,6 @@ export default function AdminRefundManagement() {
             ]}
           />
 
-          <Select
-            label="Tipo"
-            value={filters.tipo_reembolso}
-            onChange={(e) => setFilters(prev => ({ ...prev, tipo_reembolso: e.target.value }))}
-            options={[
-              { value: 'todos', label: 'Todos los tipos' },
-              { value: 'mantener_saldo', label: 'Mantener Saldo' },
-              { value: 'devolver_dinero', label: 'Devolver Dinero' }
-            ]}
-          />
 
           <Input
             label="Buscar Cliente"
@@ -344,7 +318,7 @@ export default function AdminRefundManagement() {
         size="lg"
       >
         {selectedRefund && (
-          <div className="space-y-4">
+          <div className="space-y-4 p-2">
             {/* Información de la solicitud */}
             <Card variant="outlined" padding="sm">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -360,10 +334,6 @@ export default function AdminRefundManagement() {
                 <div>
                   <p className="text-text-secondary">Monto Solicitado:</p>
                   <p className="font-bold text-lg">{formatCurrency(Number(selectedRefund.monto_solicitado || 0))}</p>
-                </div>
-                <div>
-                  <p className="text-text-secondary">Tipo:</p>
-                  <p className="font-medium">{selectedRefund.tipo_reembolso === 'mantener_saldo' ? 'Mantener Saldo' : 'Devolver Dinero'}</p>
                 </div>
                 <div>
                   <p className="text-text-secondary">Solicitado:</p>
@@ -400,38 +370,25 @@ export default function AdminRefundManagement() {
 
             {action === 'process' && (
               <div className="space-y-4">
-                {selectedRefund.tipo_reembolso === 'devolver_dinero' && (
-                  <>
-                    <Input
-                      label="Número de Operación"
-                      placeholder="Ej. OP-REF-123456"
-                      required
-                      value={formData.numero_operacion}
-                      onChange={(e) => setFormData(prev => ({ ...prev, numero_operacion: e.target.value }))}
-                    />
+                <Input
+                  label="Número de Operación"
+                  placeholder="Ej. OP-REF-123456"
+                  required
+                  value={formData.numero_operacion}
+                  onChange={(e) => setFormData(prev => ({ ...prev, numero_operacion: e.target.value }))}
+                />
 
-                    <div>
-                      <label className="block text-sm font-medium text-text-primary mb-2">
-                        Comprobante de Transferencia (opcional)
-                      </label>
-                      <FileUpload
-                        value={formData.voucher}
-                        onChange={(file) => setFormData(prev => ({ ...prev, voucher: file }))}
-                        description="PDF, JPG o PNG. Máximo 5MB."
-                        required={false}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {selectedRefund.tipo_reembolso === 'mantener_saldo' && (
-                  <div className="p-4 bg-info/10 border border-info/30 rounded-lg">
-                    <p className="text-sm text-info">
-                      <FaPhone className="w-4 h-4 inline mr-2" />
-                      Proceso automático: el monto se agregará al saldo disponible del cliente.
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-2">
+                    Comprobante de Transferencia
+                  </label>
+                  <FileUpload
+                    value={formData.voucher}
+                    onChange={(file) => setFormData(prev => ({ ...prev, voucher: file }))}
+                    description="PDF, JPG o PNG. Máximo 5MB."
+                    required={false}
+                  />
+                </div>
               </div>
             )}
 
@@ -466,13 +423,10 @@ export default function AdminRefundManagement() {
               )}
 
               {action === 'process' && (
-                <Button 
-                  variant="primary" 
+                <Button
+                  variant="primary"
                   onClick={handleProcess}
-                  disabled={
-                    (selectedRefund?.tipo_reembolso === 'devolver_dinero' && !formData.numero_operacion.trim()) ||
-                    isProcessing
-                  }
+                  disabled={!formData.numero_operacion.trim() || isProcessing}
                   loading={isProcessing}
                 >
                   <FaCogs className="w-4 h-4 mr-2" />

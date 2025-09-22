@@ -48,7 +48,7 @@ function CompetitionResults() {
 
       const resultLabels = {
         ganada: 'BOB GANÓ 🏆',
-        perdida: 'BOB PERDIÓ ❌', 
+        perdida: 'BOB PERDIÓ ❌',
         penalizada: 'CLIENTE NO PAGÓ VEHÍCULO ⚠️'
       };
       const resultLabel = resultLabels[data.resultado] || data.resultado;
@@ -215,11 +215,9 @@ function CompetitionResults() {
         isOpen={!!selectedAuction}
         onClose={onCloseResultModal}
         title={
-          selectedAuction
-            ? `Resultado Competencia - Subasta #${String(selectedAuction.id).slice(-8)}`
-            : 'Resultado Competencia'
+          'Resultado Competencia'
         }
-        size="lg"
+        size="xl"
       >
         {selectedAuction && (
           <CompetitionResultForm

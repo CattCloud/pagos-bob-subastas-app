@@ -117,13 +117,7 @@ export default function RefundTimeline({
           
           return (
             <div key={step.key} className="flex items-start gap-4 pb-6 last:pb-0">
-              {/* Línea vertical */}
-              {index < steps.length - 1 && (
-                <div className={`
-                  absolute left-5 mt-8 w-0.5 h-6
-                  ${isCompleted ? 'bg-success' : 'bg-border'}
-                `} style={{ top: `${(index * 96) + 32}px` }} />
-              )}
+
               
               {/* Icono del paso */}
               <div className={`

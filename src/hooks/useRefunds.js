@@ -77,9 +77,14 @@ export default function useRefunds(filters = {}) {
   const manageRefundMutation = useMutation({
     mutationFn: async ({ refundId, data }) => RefundService.manageRefund(refundId, data),
     onSuccess: () => {
+      // Refrescar listas y detalle
       queryClient.invalidateQueries({ queryKey: ['all-refunds'] });
       queryClient.invalidateQueries({ queryKey: ['refund'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      // Importante: liberar o mantener retención afecta saldos
+      queryClient.invalidateQueries({ queryKey: ['balance'] });
+      // Opcional: movimientos podrían reflejar rechazos/procesos previos
+      queryClient.invalidateQueries({ queryKey: ['movements'] });
     },
   });
 

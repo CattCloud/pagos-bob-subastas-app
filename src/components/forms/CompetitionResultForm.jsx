@@ -89,17 +89,17 @@ export default function CompetitionResultForm({
   const selectedOption = RESULT_OPTIONS.find(opt => opt.value === selectedResult);
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 ${className}`}>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 p-4 ${className}`}>
       {/* Información de la subasta */}
       <Card variant="info" padding="sm">
         <div className="flex items-center gap-3">
           <FaInfoCircle className="w-5 h-5 text-info" />
           <div>
             <p className="font-semibold text-text-primary">
-              Subasta #{String(auction?.id || '').slice(-8)} - {auction?.asset?.marca} {auction?.asset?.modelo} {auction?.asset?.['año']}
+              {auction?.asset?.marca} {auction?.asset?.modelo} {auction?.asset?.['año']} / {auction?.asset?.placa}
             </p>
             <p className="text-xs text-text-secondary">
-              Placa: {auction?.asset?.placa} | Estado actual: {auction?.estado}
+              Estado actual: {auction?.estado}
             </p>
             {auction?.winner && (
               <p className="text-xs text-text-secondary">

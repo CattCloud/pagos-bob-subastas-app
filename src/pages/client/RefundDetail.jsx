@@ -1,31 +1,19 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaDownload, FaWallet, FaUniversity , FaInfoCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaDownload, FaInfoCircle } from 'react-icons/fa';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import RefundTimeline from '../../components/ui/RefundTimeline';
 import useRefunds from '../../hooks/useRefunds';
 import { formatCurrency, formatRelativeDate } from '../../utils/formatters';
 import { showToast } from '../../utils/toast';
-
-const REFUND_TYPE_INFO = {
-  mantener_saldo: {
-    icon: FaWallet,
-    label: 'Mantener como Saldo',
-    color: 'text-primary-600',
-    description: 'El monto se agregó a su saldo disponible para futuras subastas'
-  },
-  devolver_dinero: {
-    icon: FaUniversity ,
-    label: 'Devolver Dinero',
-    color: 'text-secondary-600',
-    description: 'El monto fue transferido a su cuenta bancaria'
-  }
-};
+import useAuth from '../../hooks/useAuth';
 
 export default function RefundDetail() {
   const { refundId } = useParams();
   const navigate = useNavigate();
   const { useRefundDetail } = useRefunds();
+  const { user } = useAuth();
+  const isAdmin = user?.user_type === 'admin' || user?.userType === 'admin';
   
   const {
     data: refund,
@@ -98,9 +86,30 @@ export default function RefundDetail() {
     );
   }
 
-  const typeConfig = REFUND_TYPE_INFO[refund.tipo_reembolso] || REFUND_TYPE_INFO.mantener_saldo;
-  const TypeIcon = typeConfig.icon;
 
+// Datos enriquecidos (related) para usuario y subasta
+const relatedUser = refund?.related?.user || refund?.user || null;
+const relatedAuction = refund?.related?.auction || refund?.auction || null;
+
+// Usuario (solo admin)
+const userFirst = relatedUser?.first_name || '';
+const userLast = relatedUser?.last_name || '';
+const userDocType = relatedUser?.document_type || '';
+const userDocNumber = relatedUser?.document_number || '';
+const userFullName = [userFirst, userLast].filter(Boolean).join(' ');
+const userDocLine = userDocNumber ? `${userDocType ? userDocType + ' ' : ''}${userDocNumber}` : '';
+
+// Subasta asociada (admin y cliente)
+const aMarca = relatedAuction?.marca || relatedAuction?.asset?.marca || '';
+const aModelo = relatedAuction?.modelo || relatedAuction?.asset?.modelo || '';
+const aAnio = (relatedAuction && (relatedAuction['año'] ?? relatedAuction?.anio ?? relatedAuction?.year))
+  || (relatedAuction?.asset && (relatedAuction.asset['año'] ?? relatedAuction.asset?.anio ?? relatedAuction.asset?.year))
+  || '';
+const aPlaca = relatedAuction?.placa || relatedAuction?.asset?.placa || '';
+const hasAuctionInfo = Boolean(aMarca || aModelo || aAnio || aPlaca);
+const auctionLine = hasAuctionInfo
+  ? `${[aMarca, aModelo, aAnio].filter(Boolean).join(' ')}${aPlaca ? ` / ${aPlaca}` : ''}`
+  : '';
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -110,7 +119,7 @@ export default function RefundDetail() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold text-text-primary">
-            Solicitud de Reembolso #{refund.id?.slice(-8) || 'N/A'}
+            Solicitud de Reembolso 
           </h1>
           <p className="text-text-secondary">
             Creada el {refund.created_at ? formatRelativeDate(refund.created_at) : '—'}
@@ -121,6 +130,25 @@ export default function RefundDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Información principal */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Usuario que solicitó (solo admin) */}
+          {isAdmin && (userFullName || userDocLine) && (
+            <Card>
+              <Card.Header>
+                <Card.Title>Usuario que solicitó</Card.Title>
+              </Card.Header>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-text-secondary">Nombre y Apellido</p>
+                  <p className="font-semibold text-text-primary">{userFullName || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-text-secondary">Documento</p>
+                  <p className="font-semibold text-text-primary">{userDocLine || '—'}</p>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Detalles de la solicitud */}
           <Card>
             <Card.Header>
@@ -135,14 +163,6 @@ export default function RefundDetail() {
                 </p>
               </div>
 
-              <div>
-                <p className="text-sm text-text-secondary">Tipo de Reembolso</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <TypeIcon className={`w-5 h-5 ${typeConfig.color}`} />
-                  <span className="font-semibold text-text-primary">{typeConfig.label}</span>
-                </div>
-                <p className="text-sm text-text-secondary mt-1">{typeConfig.description}</p>
-              </div>
 
               <div className="md:col-span-2">
                 <p className="text-sm text-text-secondary">Motivo de la Solicitud</p>
@@ -153,8 +173,8 @@ export default function RefundDetail() {
             </div>
           </Card>
 
-          {/* Información de la subasta */}
-          {refund.auction && (
+          {/* Información de la subasta (admin y cliente) */}
+          {hasAuctionInfo && (
             <Card>
               <Card.Header>
                 <Card.Title>Subasta Asociada</Card.Title>
@@ -164,14 +184,15 @@ export default function RefundDetail() {
                 <div>
                   <p className="text-text-secondary">Vehículo</p>
                   <p className="font-semibold text-text-primary">
-                    {refund.auction.asset?.marca} {refund.auction.asset?.modelo} ({refund.auction.asset?.año})
+                    {auctionLine}
                   </p>
-                  <p className="text-text-muted">Placa: {refund.auction.asset?.placa}</p>
                 </div>
-                <div>
-                  <p className="text-text-secondary">Estado de la Subasta</p>
-                  <p className="font-semibold text-text-primary capitalize">{refund.auction.estado}</p>
-                </div>
+                {relatedAuction?.estado && (
+                  <div>
+                    <p className="text-text-secondary">Estado de la Subasta</p>
+                    <p className="font-semibold text-text-primary capitalize">{relatedAuction.estado}</p>
+                  </div>
+                )}
               </div>
             </Card>
           )}
@@ -208,7 +229,7 @@ export default function RefundDetail() {
           </Card>
 
           {/* Acciones contextuales según estado */}
-          {refund.estado === 'procesado' && refund.tipo_reembolso === 'devolver_dinero' && (
+          {refund.estado === 'procesado' && (
             <Card variant="success" padding="sm">
               <div className="text-center">
                 <h4 className="font-semibold text-success mb-2">Reembolso Completado</h4>
@@ -221,20 +242,6 @@ export default function RefundDetail() {
                     Descargar Comprobante
                   </Button>
                 )}
-              </div>
-            </Card>
-          )}
-
-          {refund.estado === 'procesado' && refund.tipo_reembolso === 'mantener_saldo' && (
-            <Card variant="success" padding="sm">
-              <div className="text-center">
-                <h4 className="font-semibold text-success mb-2">Saldo Agregado</h4>
-                <p className="text-sm text-text-secondary mb-3">
-                  El monto fue agregado a su saldo disponible
-                </p>
-                <Button size="sm" variant="outline" onClick={() => navigate('/pago-subastas/balance')}>
-                  Ver Mi Saldo
-                </Button>
               </div>
             </Card>
           )}

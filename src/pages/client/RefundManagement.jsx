@@ -16,8 +16,7 @@ export default function RefundManagement() {
   const navigate = useNavigate();
   const { balance } = useBalance();
   const [filters, setFilters] = useState({
-    estado: 'todos',
-    tipo_reembolso: 'todos'
+    estado: 'todos'
   });
   
   const {
@@ -73,7 +72,7 @@ export default function RefundManagement() {
         <Button
           variant="primary"
           onClick={() => setShowCreateForm(true)}
-          disabled={!eligibleAuctions.length || (balance?.saldo_disponible || 0) <= 0}
+          disabled={(balance?.saldo_disponible || 0) <= 0}
         >
           <FaPlus className="w-4 h-4 mr-2" />
           Nueva Solicitud
@@ -130,17 +129,6 @@ export default function RefundManagement() {
               { value: 'rechazado', label: 'Rechazado' }
             ]}
           />
-
-          <Select
-            label="Tipo"
-            value={filters.tipo_reembolso}
-            onChange={(e) => setFilters(prev => ({ ...prev, tipo_reembolso: e.target.value }))}
-            options={[
-              { value: 'todos', label: 'Todos los tipos' },
-              { value: 'mantener_saldo', label: 'Mantener Saldo' },
-              { value: 'devolver_dinero', label: 'Devolver Dinero' }
-            ]}
-          />
         </div>
       </Card>
 
@@ -186,7 +174,7 @@ export default function RefundManagement() {
               <Button
                 variant="primary"
                 onClick={() => setShowCreateForm(true)}
-                disabled={!eligibleAuctions.length || (balance?.saldo_disponible || 0) <= 0}
+                disabled={(balance?.saldo_disponible || 0) <= 0}
               >
                 <FaPlus className="w-4 h-4 mr-2" />
                 Solicitar Reembolso
@@ -213,7 +201,7 @@ export default function RefundManagement() {
         isOpen={showCreateForm}
         onClose={() => setShowCreateForm(false)}
         title="Nueva Solicitud de Reembolso"
-        size="lg"
+        size="xl"
       >
         <RefundForm
           eligibleAuctions={eligibleAuctions}

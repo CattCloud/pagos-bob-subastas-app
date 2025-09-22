@@ -333,9 +333,9 @@ function PaymentValidation() {
         title="Aprobar Movimiento"
         size="md"
       >
-        <div className="space-y-3">
+        <div className="space-y-3 p-3">
           <p className="text-sm text-text-secondary">
-            Confirmar aprobación del pago de garantía. Puedes incluir comentarios (opcional).
+            Confirmar aprobación del pago de garantía.
           </p>
           <label className="block text-sm font-medium text-text-primary">Comentarios (opcional)</label>
           <textarea

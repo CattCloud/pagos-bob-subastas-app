@@ -48,7 +48,7 @@ Estructuras de entidades (resumen):
 - Auction: { id, estado, asset, id_offerWin, fecha_resultado_general, finished_at, created_at, updated_at, fecha_limite_pago? (computado) }
 - Guarantee: { id, auction_id, user_id, monto_oferta, posicion_ranking, estado, fecha_limite_pago, created_at, updated_at }
 - Movement: { id, user_id, tipo_movimiento_general, tipo_movimiento_especifico, monto, moneda, tipo_pago?, numero_cuenta_origen?, voucher_url?, concepto, estado, fecha_pago?, fecha_resolucion?, motivo_rechazo?, numero_operacion?, auction_id_ref?, guarantee_id_ref?, refund_id_ref?, created_at, updated_at }
-- Refund: { id, user_id, auction_id?, monto_solicitado, tipo_reembolso, estado, fecha_solicitud, fecha_respuesta_empresa?, fecha_procesamiento?, motivo?, created_at, updated_at }
+- Refund: { id, user_id, auction_id?, monto_solicitado, estado, fecha_respuesta_empresa?, fecha_procesamiento?, motivo?, motivo_rechazo?, created_at, updated_at }
 - Billing: { id, user_id, billing_document_type, billing_document_number, billing_name, monto, moneda, concepto, auction_id, created_at, updated_at }
 - Notification: { id, user_id, tipo, titulo, mensaje, estado, email_status, reference_type?, reference_id?, ... }
 - User: { id, first_name, last_name, email, document_type?, document_number, user_type, saldo_total, saldo_retenido, created_at, updated_at }
@@ -178,20 +178,20 @@ GET /auctions/:id
 }
 
 PATCH /auctions/:id/status (Admin)
-- Body: { "estado": "activa|pendiente|...|penalizada", "motivo?": "string" }
+- Body: { "estado": "activa|pendiente|...|penalizada", "motivo": "string (10-500)" }
 - Respuesta 200: { "success": true, "data": { "auction": {...} } }
 
 PATCH /auctions/:id/extend-deadline (Admin)
-- Body: { "fecha_limite_pago": "ISO futura", "motivo?": "string" }
+- Body: { "fecha_limite_pago": "ISO futura", "motivo": "string (10-500)" }
 - Efecto: Actualiza Guarantee ganadora; auction devuelve fecha_limite_pago computado
 - Respuesta 200: { "success": true, "data": { "auction": {..., fecha_limite_pago} } }
 
 PATCH /auctions/:id/competition-result (Admin)
 - Body: { "resultado": "ganada|perdida|penalizada", "observaciones?": "string" }
 - Reglas:
-  - ganada: se mantiene retenido hasta facturación
-  - perdida: se mantiene retenido hasta reembolso procesado
-  - penalizada: salida por penalidad 30% y se mantiene retenido restante hasta reembolso
+  - ganada: se mantiene retenido hasta facturación (sin movimientos automáticos)
+  - perdida: crea Movement ENTRADA/reembolso automático (100% de la garantía validada), libera retenido y aumenta saldo_disponible; saldo_total no cambia
+  - penalizada: crea Movement SALIDA/penalidad (30%) y Movement ENTRADA/reembolso (70%) automáticos; libera retenido y ajusta saldo_total/saldo_disponible
 - Respuesta 200: { "success": true, "data": { "auction": {...} } }
 
 POST /auctions/:id/winner (Admin)
@@ -276,8 +276,7 @@ GET /movements
           },
           "refund": {                   // include=refund
             "id": "crf...",
-            "estado": "procesado",
-            "tipo_reembolso": "devolver_dinero"
+            "estado": "procesado"
           }
         }
       }
@@ -340,8 +339,7 @@ GET /movements/:id
         },
         "refund": {                   // include=refund
           "id": "crf...",
-          "estado": "procesado",
-          "tipo_reembolso": "devolver_dinero"
+          "estado": "procesado"
         }
       }
     }
@@ -471,7 +469,7 @@ POST /users/:userId/movements/manual (Admin)
     "tipo_movimiento": "ajuste_positivo | ajuste_negativo | penalidad_manual",
     "monto": number,
     "descripcion": "string",
-    "motivo?": "string"
+    "motivo": "string (10-500)"
   }
 - Respuesta 201: { "movement": {...}, "updated_user_cache": { saldo_total, saldo_retenido }, "user": { name, document } }
 
@@ -491,34 +489,39 @@ GET /refunds
 - Respuesta: items + paginación
 
 POST /refunds (Client)
-- Descripción: Crear solicitud de reembolso
+- Descripción: Crear solicitud de reembolso (Devolver Dinero)
 - Body:
   {
     "auction_id?": "string",
     "monto_solicitado": number,
-    "tipo_reembolso": "mantener_saldo" | "devolver_dinero",
-    "motivo?": "string"
+    "motivo": "string (10-500)"
   }
 - Reglas:
-  - RN07: validación contra retenido por subasta (interno)
+  - Valida contra saldo_disponible = saldo_total - saldo_retenido - saldo_aplicado
+  - Retención inmediata al crear solicitud:
+    - saldo_retenido += monto_solicitado
+    - saldo_disponible -= monto_solicitado
+    - saldo_total SIN CAMBIO
+  - Solo se permite 1 solicitud pendiente (solicitado|confirmado) por cliente
+  - auction_id es opcional (trazabilidad)
 - Respuesta 201: { "refund": {...} }
 
 PATCH /refunds/:id/manage (Admin)
 - Descripción: Confirmar o rechazar solicitud
-- Body: { "estado":"confirmado|rechazado", "motivo?": "string" }
+- Body: { "estado":"confirmado|rechazado", "motivo": "string (10-500)" }
+- Nota: En rechazo se registra motivo_rechazo en la entidad.
 - Respuesta: { "refund": {...} }
 
 PATCH /refunds/:id/process (Admin, multipart)
-- Descripción: Procesar reembolso confirmado
+- Descripción: Procesar reembolso confirmado (únicamente “Devolver Dinero”)
 - Form-data:
   - tipo_transferencia? ('transferencia'|'deposito')
   - banco_destino?, numero_cuenta_destino?
-  - numero_operacion (obligatorio si devolver_dinero)
+  - numero_operacion (obligatorio)
   - voucher? (comprobante del reembolso)
 - Efecto:
-  - mantener_saldo => Movement entrada/reembolso validado
-  - devolver_dinero => Movement salida/reembolso validado
-  - siempre recalcula saldos
+  - Crea Movement salida/reembolso validado (saldo_total ↓; saldo_retenido ↓; saldo_disponible SIN CAMBIO)
+  - Recalcula saldos
 - Respuesta 200: { "refund": {...}, "movement": {...} }
 
 --------------------------------------------------------------------------------
@@ -564,4 +567,22 @@ GET /jobs/daily-report
 Implementación de jobs: [jobs/auctionJobs.js](jobs/auctionJobs.js:1)
 
 --------------------------------------------------------------------------------
+
+Anexos técnicos
+
+A) Estados y Reglas (RN)
+- RN de cálculo de saldos y retención: ver [services/movementService.js](services/movementService.js:480), [services/refundService.js](services/refundService.js:506), [services/balanceService.js](services/balanceService.js:380)
+- Penalidad 30%: ver [services/auctionService.js](services/auctionService.js:398)
+
+B) Notas de compatibilidad
+- Auction.fecha_limite_pago es computado desde Guarantee; la escritura real se hace en Guarantee (createWinner, extendPaymentDeadline)
+- Movement usa FKs directas; algunas rutas devuelven references como arreglo (type/id) por compatibilidad y otras como objeto (ids). Esto no impacta contratos previos si el frontend ya consumía ambas variantes
+
+C) Upload de archivos
+- Cloudinary configurado: [config/cloudinary.js](config/cloudinary.js:1)
+- Límites: app usa json/urlencoded y multer en controllers
+
+D) Seguridad
+- Todas las rutas /api/* protegidas con requireAuth; admin-only señaladas con requireAdmin. Ver [index.js](index.js:60), [middleware/index.js](middleware/index.js:1)
+
 
