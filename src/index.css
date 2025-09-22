@@ -42,3 +42,52 @@
   --color-border: #e2e8f0;
   --color-border-light: #f1f5f9;
 }
+
+/* -----------------------------------------------------------------------------
+   Dark mode por clase .dark en html
+   - No requiere cambiar JSX si los componentes usan tokens del @theme (bg-bg-*, text-text-*, border-border, etc.)
+   - Solo alternar la clase "dark" en document.documentElement
+----------------------------------------------------------------------------- */
+
+.dark {
+  /* Backgrounds */
+  --color-bg-primary: #0b1220;   /* Base app (reemplaza bg-white mediante override abajo) */
+  --color-bg-secondary: #0f172a; /* Layout background */
+  --color-bg-tertiary: #111827;  /* Superficies elevadas/sutiles */
+  --color-bg-dark: #0b1220;
+
+  /* Textos */
+  --color-text-primary: #e5e7eb;   /* Gris 200 */
+  --color-text-secondary: #cbd5e1; /* Slate 300 */
+  --color-text-muted: #94a3b8;     /* Slate 400 */
+  --color-text-white: #ffffff;
+
+  /* Estados (se mantienen, son accesibles también en oscuro) */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Bordes */
+  --color-border: #1f2937;       /* Gris 800 */
+  --color-border-light: #111827;
+
+  /* Ajustes suaves para variantes "50/100" usadas como fondos sutiles en oscuro */
+  --color-primary-50: #062c37;     /* Teal muy oscuro para pills/fondos suaves */
+  --color-secondary-50: #2a1f0a;   /* Dorado muy oscuro */
+  --color-secondary-100: #3a2a0c;
+}
+
+/* -----------------------------------------------------------------------------
+   Overrides utilitarios comunes en modo oscuro
+   - Muchas vistas usan bg-white por defecto (headers, sidebars, cards)
+   - En oscuro lo redirigimos al token de superficie primaria oscura
+----------------------------------------------------------------------------- */
+.dark .bg-white { background-color: var(--color-bg-primary) !important; }
+
+/* Bordes/Separadores: asegurar contraste correcto en oscuro */
+.dark .border-border { border-color: var(--color-border) !important; }
+
+/* Sombras más profundas en oscuro (opcional, mejora percepción de elevación) */
+.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, .6) !important; }
+.dark .shadow { box-shadow: 0 1px 3px 0 rgba(0,0,0,.7), 0 1px 2px -1px rgba(0,0,0,.6) !important; }

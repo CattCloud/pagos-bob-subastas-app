@@ -5,6 +5,20 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import './index.css'
 import App from './App.jsx'
 
+// Bootstrap de tema antes de renderizar React (evita "flash" de tema incorrecto)
+(function bootstrapTheme() {
+  try {
+    const saved = localStorage.getItem('theme'); // 'dark' | 'light' | null
+    let isDark;
+    if (saved === 'dark') isDark = true;
+    else if (saved === 'light') isDark = false;
+    else isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', !!isDark);
+  } catch {
+    // ignore
+  }
+})();
+
 // Configuración de React Query
 const queryClient = new QueryClient({
   defaultOptions: {

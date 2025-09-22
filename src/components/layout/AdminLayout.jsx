@@ -2,16 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import useNotifications from '../../hooks/useNotifications';
-import { FaBars, FaTimes, FaUserShield, FaSignOutAlt } from 'react-icons/fa';
+import { FaBars, FaTimes, FaUserShield, FaSignOutAlt, FaMoon, FaSun } from 'react-icons/fa';
 import NotificationBadge from '../ui/NotificationBadge';
 import useAdminBadges from '../../hooks/useAdminBadges';
+import useTheme from '../../hooks/useTheme';
 
 function AdminLayout() {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const { pendingPaymentsCount, pendingRefundsCount } = useAdminBadges();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+ 
+  const { isDark, toggleTheme } = useTheme();
+ 
   // Dropdown de usuario (perfil)
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -89,7 +92,18 @@ function AdminLayout() {
                       <p className="text-xs text-text-secondary mt-0.5">Administrador</p>
                     </div>
                     <div className="border-t border-border" />
-                    <div className="p-3">
+                    <div className="p-3 space-y-2">
+                      <button
+                        onClick={toggleTheme}
+                        className="w-full inline-flex items-center justify-between px-3 py-2 rounded-md border border-border hover:bg-bg-tertiary transition-colors"
+                        title="Alternar tema"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          {isDark ? <FaSun className="w-4 h-4" /> : <FaMoon className="w-4 h-4" />}
+                          <span className="text-sm">{isDark ? 'Tema: Oscuro' : 'Tema: Claro'}</span>
+                        </span>
+                        <span className="text-xs text-text-secondary">Cambiar</span>
+                      </button>
                       <button
                         onClick={handleLogout}
                         className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-white bg-error hover:bg-error/90 transition-colors"

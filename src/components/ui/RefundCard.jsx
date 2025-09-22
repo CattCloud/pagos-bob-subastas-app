@@ -162,7 +162,7 @@ export default function RefundCard({
 
     {/* Motivo */}
     {motivo && (
-      <div className="bg-gray-50 rounded-md p-3 border border-border/40">
+      <div className="bg-primary-50 rounded-md p-3 border border-border/40">
         <p className="text-xs text-text-secondary uppercase tracking-wide mb-1">Motivo</p>
         <p className="text-sm text-text-primary leading-relaxed">
           {motivo.length > 100 ? `${motivo.slice(0, 100)}...` : motivo}

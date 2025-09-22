@@ -30,7 +30,7 @@ export default function AdminBillingDetail() {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">Detalle de Facturación (Admin)</h1>
+            <h1 className="text-2xl font-bold text-text-primary">Detalle de Facturación</h1>
             <p className="text-text-secondary mt-1">Visualiza y completa los datos de facturación del cliente.</p>
           </div>
           {billing && <BillingStatusBadge billing={billing} />}
