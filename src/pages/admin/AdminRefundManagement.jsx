@@ -7,6 +7,7 @@ import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import RefundCard from '../../components/ui/RefundCard';
 import FileUpload from '../../components/forms/FileUpload';
+import { LoadingState, ErrorState, EmptyState } from '../../components/ui/states';
 import useRefunds from '../../hooks/useRefunds';
 import { formatCurrency, formatRelativeDate } from '../../utils/formatters';
 import { showToast } from '../../utils/toast';
@@ -277,32 +278,31 @@ export default function AdminRefundManagement() {
 
         <div className="space-y-4">
           {isLoadingAllRefunds && (
-            <>
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="p-4 border border-border rounded-lg animate-pulse">
-                  <div className="h-4 bg-border rounded w-1/4 mb-2"></div>
-                  <div className="h-3 bg-border rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-border rounded w-1/3"></div>
-                </div>
-              ))}
-            </>
+            <LoadingState
+              type="skeleton"
+              count={4}
+              message="Cargando solicitudes de reembolso..."
+            />
           )}
 
           {!isLoadingAllRefunds && isErrorAllRefunds && (
-            <div className="p-4 border border-error/30 bg-error/5 text-error rounded-lg text-sm">
-              {errorAllRefunds?.message || 'Error al cargar solicitudes de reembolso'}
-              <div className="mt-2">
-                <Button size="sm" variant="outline" onClick={refetchAllRefunds}>
-                  Reintentar
-                </Button>
-              </div>
-            </div>
+            <ErrorState
+              type="general"
+              title="Error al cargar solicitudes"
+              message={errorAllRefunds?.message || 'Error al cargar solicitudes de reembolso'}
+              error={errorAllRefunds}
+              onRetry={refetchAllRefunds}
+              compact
+            />
           )}
 
           {!isLoadingAllRefunds && !isErrorAllRefunds && allRefunds.length === 0 && (
-            <div className="p-8 border border-border rounded-lg text-center text-text-secondary">
-              No hay solicitudes de reembolso para gestionar.
-            </div>
+            <EmptyState
+              type="refunds"
+              title="Sin solicitudes de reembolso"
+              message="No hay solicitudes de reembolso para gestionar en este momento."
+              compact
+            />
           )}
 
           {!isLoadingAllRefunds && !isErrorAllRefunds && allRefunds.length > 0 && (

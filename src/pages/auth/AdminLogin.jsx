@@ -114,21 +114,7 @@ function AdminLogin() {
             </p>
           </div>
         </Card>
-        
-        {/* Información adicional */}
-        <Card className="mt-6" variant="ghost" padding="sm">
-          <div className="text-center">
-            <h4 className="text-sm font-medium text-text-primary mb-2">
-              Funciones Administrativas
-            </h4>
-            <ul className="text-xs text-text-secondary space-y-1">
-              <li>• Validación de pagos de garantía</li>
-              <li>• Gestión de subastas y resultados</li>
-              <li>• Administración de saldos y reembolsos</li>
-              <li>• Generación de facturas y reportes</li>
-            </ul>
-          </div>
-        </Card>
+      
         
         {/* Footer */}
         <div className="mt-8 text-center">

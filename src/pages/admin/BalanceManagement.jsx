@@ -4,6 +4,9 @@ import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
+import LoadingState from '../../components/ui/states/LoadingState';
+import ErrorState from '../../components/ui/states/ErrorState';
+import EmptyState from '../../components/ui/states/EmptyState';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import BalanceService from '../../services/balanceService';
 
@@ -206,28 +209,32 @@ export default function BalanceManagement() {
 
         <div className="overflow-x-auto">
           {isLoading && (
-            <div className="p-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-10 bg-border/50 rounded mb-2 animate-pulse" />
-              ))}
-            </div>
+            <LoadingState
+              type="skeleton"
+              count={5}
+              message="Cargando balances de clientes..."
+            />
           )}
 
           {!isLoading && isError && (
-            <div className="p-4 border border-error/30 bg-error/5 text-error rounded-lg text-sm">
-              {error?.message || 'Error al cargar balances'}
-              <div className="mt-2">
-                <Button size="sm" variant="outline" onClick={refetch}>
-                  Reintentar
-                </Button>
-              </div>
-            </div>
+            <ErrorState
+              type="general"
+              title="Error al cargar balances"
+              message={error?.message || 'No se pudieron obtener los datos de saldos'}
+              error={error}
+              onRetry={refetch}
+              compact
+            />
           )}
 
           {!isLoading && !isError && balances.length === 0 && (
-            <div className="p-8 border border-border rounded-lg text-center text-text-secondary">
-              No hay clientes registrados o no se encontraron resultados.
-            </div>
+            <EmptyState
+              type="users"
+              title="Sin clientes registrados"
+              message="No hay clientes registrados o no se encontraron resultados para los filtros aplicados."
+              actionText="Limpiar filtros"
+              onAction={() => setFilters({ search: '', page: 1, limit: 20 })}
+            />
           )}
 
           {!isLoading && !isError && balances.length > 0 && (

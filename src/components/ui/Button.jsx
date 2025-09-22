@@ -1,78 +1,81 @@
-import { forwardRef } from 'react';
+import React from 'react';
+import { ClipLoader } from 'react-spinners';
 
-const Button = forwardRef(({ 
-  children, 
-  variant = 'primary', 
-  size = 'md', 
+/**
+ * Componente Button mejorado con estados de loading usando react-spinners
+ * Mantiene compatibilidad con la implementación anterior
+ */
+export default function Button({
+  children,
+  variant = 'primary',
+  size = 'md',
   disabled = false,
   loading = false,
   className = '',
+  icon,
+  loadingText,
   type = 'button',
-  ...props 
-}, ref) => {
-  
-  const baseStyles = "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  ...props
+}) {
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variants = {
-    primary: "bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500 cursor-pointer",
-    secondary: "bg-secondary-600 hover:bg-secondary-700 text-white focus:ring-secondary-500 cursor-pointer", 
-    success: "bg-success hover:bg-success/80 text-white focus:ring-success cursor-pointer",
-    warning: "bg-warning hover:bg-warning/80 text-white focus:ring-warning cursor-pointer",
-    error: "bg-error hover:bg-error/80 text-white focus:ring-error cursor-pointer",
-    outline: "border  border-border bg-bg-tertiary text-text-primary focus:ring-primary-500 cursor-pointer",
-    ghost: "hover:bg-bg-tertiary text-text-primary focus:ring-primary-500 cursor-pointer",
-    link: "text-primary-600 hover:text-primary-700 underline-offset-4 hover:underline focus:ring-primary-500 cursor-pointer"
+    primary: 'bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500',
+    secondary: 'bg-secondary-600 hover:bg-secondary-700 text-white focus:ring-secondary-500',
+    outline: 'border border-border bg-white hover:bg-bg-secondary text-text-primary focus:ring-primary-500',
+    success: 'bg-success hover:bg-success/90 text-white focus:ring-success/50',
+    error: 'bg-error hover:bg-error/90 text-white focus:ring-error/50',
+    warning: 'bg-warning hover:bg-warning/90 text-white focus:ring-warning/50',
+    info: 'bg-info hover:bg-info/90 text-white focus:ring-info/50',
+    ghost: 'hover:bg-bg-tertiary text-text-primary focus:ring-primary-500',
   };
-  
+
   const sizes = {
-    sm: "px-3 py-1.5 text-sm rounded-md",
-    md: "px-4 py-2 text-sm rounded-md", 
-    lg: "px-6 py-3 text-base rounded-md",
-    xl: "px-8 py-4 text-lg rounded-lg"
+    xs: 'px-2 py-1 text-xs',
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base',
+    xl: 'px-8 py-4 text-lg',
   };
-  
-  const buttonClasses = `
-    ${baseStyles}
-    ${variants[variant]}
-    ${sizes[size]}
-    ${loading ? 'cursor-wait' : ''}
-    ${className}
-  `.trim();
-  
+
+  const spinnerSizes = {
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 18,
+    xl: 20,
+  };
+
+  const isDisabled = disabled || loading;
+  const spinnerColor = variant === 'outline' || variant === 'ghost' ? '#0e7490' : '#ffffff';
+
   return (
-    <button  
-      ref={ref}
+    <button
       type={type}
-      disabled={disabled || loading}
-      className={buttonClasses}
+      disabled={isDisabled}
+      className={`
+        ${baseClasses}
+        ${variants[variant] || variants.primary}
+        ${sizes[size] || sizes.md}
+        ${className}
+      `}
       {...props}
     >
       {loading && (
-        <svg 
-          className="animate-spin -ml-1 mr-2 h-4 w-4" 
-          fill="none" 
-          viewBox="0 0 24 24"
-        >
-          <circle 
-            className="opacity-25" 
-            cx="12" 
-            cy="12" 
-            r="10" 
-            stroke="currentColor" 
-            strokeWidth="4"
-          />
-          <path 
-            className="opacity-75" 
-            fill="currentColor" 
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
+        <ClipLoader 
+          size={spinnerSizes[size]} 
+          color={spinnerColor}
+          className="mr-2"
+        />
       )}
-      {children}
+      
+      {!loading && icon && (
+        <span className="mr-2">
+          {icon}
+        </span>
+      )}
+      
+      {loading ? (loadingText || 'Cargando...') : children}
     </button>
   );
-});
-
-Button.displayName = 'Button';
-
-export default Button;
+}

@@ -1,7 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import LoadingState from '../../components/ui/states/LoadingState';
+import ErrorState from '../../components/ui/states/ErrorState';
+import EmptyState from '../../components/ui/states/EmptyState';
 import useAuth from '../../hooks/useAuth';
 import AuctionService from '../../services/auctionService';
 import MovementService from '../../services/movementService';
@@ -113,37 +116,36 @@ export default function MyAuctions() {
     }
   };
 
-  const listContent = useMemo(() => {
+  const renderContent = () => {
     if (loading) {
       return (
-        <>
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="p-4 border border-border rounded-lg animate-pulse">
-              <div className="h-4 bg-border rounded w-1/4 mb-2"></div>
-              <div className="h-3 bg-border rounded w-1/2 mb-2"></div>
-              <div className="h-3 bg-border rounded w-1/3"></div>
-            </div>
-          ))}
-        </>
+        <LoadingState
+          type="skeleton"
+          count={4}
+          message="Cargando tus subastas ganadas..."
+        />
       );
     }
+
     if (error) {
       return (
-        <div className="p-4 border border-error/30 bg-error/5 text-error rounded-lg text-sm">
-          {error}
-          <div className="mt-2">
-            <Button size="sm" variant="outline" onClick={loadAuctions}>
-              Reintentar
-            </Button>
-          </div>
-        </div>
+        <ErrorState
+          type="general"
+          title="Error al cargar subastas"
+          message={error}
+          onRetry={loadAuctions}
+          compact
+        />
       );
     }
+
     if (!auctions.length) {
       return (
-        <div className="p-8 border border-border rounded-lg text-center text-text-secondary">
-          No tienes subastas ganadas por ahora.
-        </div>
+        <EmptyState
+          type="auctions"
+          title="Sin subastas ganadas"
+          message="Aún no tienes subastas donde seas ganador. Las subastas aparecerán aquí cuando resultes ganador en una competencia."
+        />
       );
     }
 
@@ -202,7 +204,7 @@ export default function MyAuctions() {
         })}
       </div>
     );
-  }, [auctions, error, loading, loadingAction]);
+  };
 
   return (
     <div className="space-y-6">
@@ -218,7 +220,7 @@ export default function MyAuctions() {
           <Card.Title className="!m-0">Subastas ganadas</Card.Title>
         </Card.Header>
         <div className="space-y-4">
-          {listContent}
+          {renderContent()}
         </div>
       </Card>
 

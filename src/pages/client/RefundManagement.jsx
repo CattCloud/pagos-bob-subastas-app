@@ -7,6 +7,9 @@ import Select from '../../components/ui/Select';
 import RefundCard from '../../components/ui/RefundCard';
 import RefundForm from '../../components/forms/RefundForm';
 import Modal from '../../components/ui/Modal';
+import LoadingState from '../../components/ui/states/LoadingState';
+import ErrorState from '../../components/ui/states/ErrorState';
+import EmptyState from '../../components/ui/states/EmptyState';
 import useRefunds from '../../hooks/useRefunds';
 import useBalance from '../../hooks/useBalance';
 import { formatCurrency } from '../../utils/formatters';
@@ -140,46 +143,32 @@ export default function RefundManagement() {
 
         <div className="space-y-4">
           {isLoadingRefunds && (
-            <>
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="p-4 border border-border rounded-lg animate-pulse">
-                  <div className="h-4 bg-border rounded w-1/4 mb-2"></div>
-                  <div className="h-3 bg-border rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-border rounded w-1/3"></div>
-                </div>
-              ))}
-            </>
+            <LoadingState
+              type="skeleton"
+              count={4}
+              message="Cargando solicitudes de reembolso..."
+            />
           )}
 
           {!isLoadingRefunds && isErrorRefunds && (
-            <div className="p-4 border border-error/30 bg-error/5 text-error rounded-lg text-sm">
-              {errorRefunds?.message || 'Error al cargar historial de reembolsos'}
-              <div className="mt-2">
-                <Button size="sm" variant="outline" onClick={refetchRefunds}>
-                  Reintentar
-                </Button>
-              </div>
-            </div>
+            <ErrorState
+              type="general"
+              title="Error al cargar reembolsos"
+              message={errorRefunds?.message || 'Error al cargar historial de reembolsos'}
+              error={errorRefunds}
+              onRetry={refetchRefunds}
+              compact
+            />
           )}
 
           {!isLoadingRefunds && !isErrorRefunds && refunds.length === 0 && (
-            <div className="p-8 border border-border rounded-lg text-center">
-              <FaFileAlt className="w-12 h-12 mx-auto mb-4 text-text-muted" />
-              <h3 className="text-lg font-semibold text-text-primary mb-2">
-                No tienes solicitudes de reembolso
-              </h3>
-              <p className="text-text-secondary mb-4">
-                Cuando tengas saldo disponible o BOB pierda una competencia, podrás solicitar reembolsos aquí.
-              </p>
-              <Button
-                variant="primary"
-                onClick={() => setShowCreateForm(true)}
-                disabled={(balance?.saldo_disponible || 0) <= 0}
-              >
-                <FaPlus className="w-4 h-4 mr-2" />
-                Solicitar Reembolso
-              </Button>
-            </div>
+            <EmptyState
+              type="refunds"
+              title="Sin solicitudes de reembolso"
+              message="No tienes solicitudes de reembolso registradas. Puedes solicitar un reembolso cuando tengas saldo disponible."
+              actionText="Nueva solicitud"
+              onAction={() => setShowCreateForm(true)}
+            />
           )}
 
           {!isLoadingRefunds && !isErrorRefunds && refunds.length > 0 && (

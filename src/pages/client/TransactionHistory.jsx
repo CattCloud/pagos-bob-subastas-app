@@ -1,9 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import TransactionFilters from '../../components/ui/transactions/TransactionFilters';
 import TransactionCard from '../../components/ui/transactions/TransactionCard';
 import TransactionDetail from '../../components/ui/transactions/TransactionDetail';
+import LoadingState from '../../components/ui/states/LoadingState';
+import ErrorState from '../../components/ui/states/ErrorState';
+import EmptyState from '../../components/ui/states/EmptyState';
 import useMovements from '../../hooks/useMovements';
 import { FaChevronLeft, FaChevronRight, FaSync } from 'react-icons/fa';
 
@@ -107,22 +110,7 @@ export default function TransactionHistory() {
     }
   };
 
-  const emptyState = useMemo(() => (
-    <div className="text-center py-12">
-      <div className="mx-auto w-16 h-16 rounded-full bg-bg-tertiary border border-border flex items-center justify-center mb-4">
-        <div className="w-8 h-8 rounded-full bg-border" />
-      </div>
-      <h3 className="text-lg font-semibold text-text-primary">Sin transacciones</h3>
-      <p className="text-sm text-text-secondary mt-1">
-        Aún no registras movimientos o no hay resultados con los filtros actuales.
-      </p>
-      <div className="mt-4">
-        <Button variant="outline" onClick={handleResetFilters}>
-          Limpiar filtros
-        </Button>
-      </div>
-    </div>
-  ), []);
+  const hasFilters = Object.values(filters).some(v => v && v !== 'todos' && v !== '');
 
   return (
     <div className="space-y-6">
@@ -161,18 +149,6 @@ export default function TransactionHistory() {
         disabled={isLoading || isFetching}
       />
 
-      {isError && (
-        <Card variant="error" title="Error al cargar transacciones">
-          <div className="text-sm text-error">
-            {error?.message || 'Ocurrió un error al obtener tus movimientos.'}
-          </div>
-          <div className="mt-4">
-            <Button variant="error" onClick={() => refetch()}>
-              Reintentar
-            </Button>
-          </div>
-        </Card>
-      )}
 
       <Card>
         <Card.Header>
@@ -185,19 +161,39 @@ export default function TransactionHistory() {
         </Card.Header>
 
         <div className="space-y-3">
-          {isLoading ? (
-            <>
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="p-4 border border-border rounded-lg animate-pulse">
-                  <div className="h-4 bg-border rounded w-1/4 mb-2"></div>
-                  <div className="h-3 bg-border rounded w-1/2 mb-1"></div>
-                  <div className="h-3 bg-border rounded w-1/3"></div>
-                </div>
-              ))}
-            </>
-          ) : movements.length === 0 ? (
-            emptyState
-          ) : (
+          {isLoading && (
+            <LoadingState
+              type="skeleton"
+              count={5}
+              message="Cargando transacciones..."
+            />
+          )}
+
+          {!isLoading && isError && (
+            <ErrorState
+              type="general"
+              title="Error al cargar transacciones"
+              message={error?.message || 'Ocurrió un error al obtener tus movimientos'}
+              error={error}
+              onRetry={refetch}
+              compact
+            />
+          )}
+
+          {!isLoading && !isError && movements.length === 0 && (
+            <EmptyState
+              type="transactions"
+              title={hasFilters ? 'Sin resultados' : 'Aún no tienes transacciones'}
+              message={hasFilters
+                ? 'No se encontraron transacciones que coincidan con los filtros aplicados.'
+                : 'Las transacciones aparecerán aquí cuando realices pagos de garantía.'
+              }
+              actionText={hasFilters ? 'Limpiar filtros' : 'Registrar primer pago'}
+              onAction={hasFilters ? handleResetFilters : () => window.location.href = '/pago-subastas/payment'}
+            />
+          )}
+
+          {!isLoading && !isError && movements.length > 0 && (
             movements.map((m) => (
               <TransactionCard key={m.id} movement={m} onDetail={openDetail} />
             ))
