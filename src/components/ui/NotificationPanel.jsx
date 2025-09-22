@@ -7,20 +7,64 @@ import Select from './Select';
 import NotificationCard from './NotificationCard';
 import { useNavigate } from 'react-router-dom';
 
-const NOTIFICATION_ACTIONS = {
-  ganador_subasta: '/pago-subastas/payment',
-  pago_validado: '/pago-subastas',
-  pago_rechazado: '/pago-subastas/payment',
-  competencia_ganada: '/pago-subastas', // TODO: billing cuando esté implementado
-  competencia_perdida: '/pago-subastas/refunds',
-  penalidad_aplicada: '/pago-subastas/refunds',
-  reembolso_procesado: '/pago-subastas/transactions',
-  facturacion_completada: '/pago-subastas/transactions',
-  // Admin actions
-  pago_registrado: '/admin-subastas', // validation dashboard
-  reembolso_solicitado: '/admin-subastas/refunds',
-  billing_generado: '/admin-subastas/billing',
-};
+function getActionPath(notification, userType = 'client') {
+  // Considerar estructura normalizada y raw del backend
+  const tipo = notification?.tipo;
+  const refType = notification?.reference_type || notification?.raw?.reference_type;
+  const refId = notification?.reference_id || notification?.raw?.reference_id;
+
+  // Cliente
+  if (userType === 'client') {
+    switch (tipo) {
+      case 'ganador_subasta':
+        return '/pago-subastas/payment';
+      case 'pago_validado':
+        return '/pago-subastas/transactions';
+      case 'pago_rechazado':
+        return '/pago-subastas/payment';
+      case 'competencia_ganada':
+        // Deep-link a completar facturación si reference apunta a billing
+        if (refType === 'billing' && refId) {
+          return `/pago-subastas/billing/${refId}/complete`;
+        }
+        return '/pago-subastas/billing';
+      case 'competencia_perdida':
+        return '/pago-subastas/refunds';
+      case 'penalidad_aplicada':
+        return '/pago-subastas/refunds';
+      case 'reembolso_procesado':
+        return '/pago-subastas/transactions';
+      case 'facturacion_completada':
+        // Ver detalle de billing si hay referencia
+        if (refType === 'billing' && refId) {
+          return `/pago-subastas/billing/${refId}`;
+        }
+        return '/pago-subastas/billing';
+      default:
+        return null;
+    }
+  }
+
+  // Admin
+  switch (tipo) {
+    case 'pago_registrado':
+      return '/admin-subastas'; // dashboard de validación
+    case 'reembolso_solicitado':
+      return '/admin-subastas/refunds';
+    case 'billing_generado':
+      // Ir directo al detalle si tenemos id de billing
+      if (refType === 'billing' && refId) {
+        return `/admin-subastas/billing/${refId}`;
+      }
+      return '/admin-subastas/billing';
+    case 'penalidad_procesada':
+      return '/admin-subastas/auctions';
+    case 'competencia_perdida_procesada':
+      return '/admin-subastas/competition';
+    default:
+      return null;
+  }
+}
 
 /**
  * Panel de notificaciones reutilizable para cliente y admin
@@ -143,10 +187,10 @@ export default function NotificationPanel({
       onMarkAsRead?.(notification.id);
     }
 
-    // Navegación contextual según tipo
-    const action = NOTIFICATION_ACTIONS[notification.tipo];
-    if (action) {
-      navigate(action);
+    // Navegación contextual según tipo + referencia
+    const path = getActionPath(notification, userType);
+    if (path) {
+      navigate(path);
     }
   };
 

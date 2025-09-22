@@ -3,6 +3,7 @@ import { Outlet, NavLink } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import useNotifications from '../../hooks/useNotifications';
 import useBalance from '../../hooks/useBalance';
+import useClientBadges from '../../hooks/useClientBadges';
 import { formatCurrency } from '../../utils/formatters';
 import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaWallet } from 'react-icons/fa';
 import NotificationBadge from '../ui/NotificationBadge';
@@ -10,6 +11,7 @@ import NotificationBadge from '../ui/NotificationBadge';
 function ClientLayout() {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const { pendingBillingCount } = useClientBadges();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Saldo disponible (badge en header)
@@ -169,6 +171,20 @@ function ClientLayout() {
               </li>
               <li>
                 <NavLink
+                  to="/pago-subastas/auctions"
+                  onClick={closeMobileMenu}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 rounded-lg transition-colors ${isActive
+                      ? 'bg-primary-50 text-primary-600 font-medium'
+                      : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+                    }`
+                  }
+                >
+                  Mis Subastas
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
                   to="/pago-subastas/transactions"
                   onClick={closeMobileMenu}
                   className={({ isActive }) =>
@@ -178,7 +194,7 @@ function ClientLayout() {
                     }`
                   }
                 >
-                  Historial
+                  Historial de Movimientos
                 </NavLink>
               </li>
               <li>
@@ -193,6 +209,25 @@ function ClientLayout() {
                   }
                 >
                   Registrar Pago
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/pago-subastas/billing"
+                  onClick={closeMobileMenu}
+                  className={({ isActive }) =>
+                    `flex items-center justify-between px-4 py-2 rounded-lg transition-colors ${isActive
+                      ? 'bg-primary-50 text-primary-600 font-medium'
+                      : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+                    }`
+                  }
+                >
+                  <span>Facturación</span>
+                  {pendingBillingCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-5 h-5 text-xs font-bold text-white bg-warning rounded-full">
+                      {pendingBillingCount > 99 ? '99+' : pendingBillingCount}
+                    </span>
+                  )}
                 </NavLink>
               </li>
               <li>

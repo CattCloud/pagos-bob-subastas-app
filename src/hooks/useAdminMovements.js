@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import MovementService from '../services/movementService';
 
  // Normalizador: homologa y aplana movimientos que pueden venir anidados
@@ -60,6 +60,9 @@ export default function useAdminMovements(initial = {}) {
     ...DEFAULT_FILTERS,
     ...(initial.filters || {}),
   });
+
+  // Para invalidar badges de admin (pendientes) tras aprobar/rechazar
+  const queryClient = useQueryClient();
 
   // Query key memoizada para evitar renders innecesarios
   const queryKey = useMemo(() => ([
@@ -161,14 +164,18 @@ export default function useAdminMovements(initial = {}) {
   const approve = useCallback(async (movementId, data = {}) => {
     const res = await MovementService.approveMovement(movementId, data);
     await refetch();
+    // Actualizar contador de "Pagos de Garantía" pendientes en el menú
+    queryClient.invalidateQueries({ queryKey: ['admin-badge', 'pending-guarantee-payments'] });
     return res;
-  }, [refetch]);
+  }, [refetch, queryClient]);
 
   const reject = useCallback(async (movementId, data) => {
     const res = await MovementService.rejectMovement(movementId, data);
     await refetch();
+    // Actualizar contador de "Pagos de Garantía" pendientes en el menú
+    queryClient.invalidateQueries({ queryKey: ['admin-badge', 'pending-guarantee-payments'] });
     return res;
-  }, [refetch]);
+  }, [refetch, queryClient]);
 
   return {
     // datos

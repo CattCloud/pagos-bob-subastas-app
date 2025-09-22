@@ -293,28 +293,116 @@
 ---
 
 ### **🧾 FASE 9: MÓDULO FACTURACIÓN**
-**Objetivo:** HU-BILL-01 cuando BOB gana competencia
+**Objetivo:** Implementar HU-COMP-02 + HU-BILL-01 según backend actual:
+- Al marcar “ganada” (Admin), el backend crea automáticamente un Billing parcial (sin datos de facturación) y libera saldo_retenido.
+- Cliente/Admin deben poder completar los datos de facturación del Billing existente con PATCH `/api/billing/:id/complete`.
+- Listados y detalle con include=user,auction para evitar solicitar recursos extra.
+
+Referencias backend obligatorias:
+- Endpoints en [`doc/DocumentacionAPI.md`](./DocumentacionAPI.md): Billing list/detail/user-list y PATCH complete.
+- HU funcionales: [`doc/HU Detalladas/HU-COMP-02 - Procesar Resultado BOB Gano (Admin).md`](./HU%20Detalladas/HU-COMP-02%20-%20Procesar%20Resultado%20BOB%20Gano%20(Admin).md), [`doc/HU Detalladas/HU-BILL-01 - Completar Datos Facturacion (Cliente).md`](./HU%20Detalladas/HU-BILL-01%20-%20Completar%20Datos%20Facturacion%20(Cliente).md)
 
 **TODO DETALLADO:**
-- [ ] **9.1** Crear servicio billing (`src/services/billingService.js`):
-  - POST `/billing` completar datos
-- [ ] **9.2** Formulario facturación cliente (`src/pages/client/BillingCompletion.jsx`):
-  - Datos billing: document_type, document_number, name
-  - Solo visible cuando subasta estado = 'ganada'
-  - Mostrar impacto en saldo (retenido → aplicado)
-- [ ] **9.3** Gestión billing admin (`src/pages/admin/BillingManagement.jsx`):
-  - Lista facturas generadas
-  - Seguimiento saldos aplicados
-- [ ] **9.4** Crear componentes:
-  - `BillingForm.jsx` - Formulario datos
-  - `BillingCard.jsx` - Item factura
-- [ ] **9.5** Validaciones documento billing
+- [ ] **9.1 Servicio Billing (frontend)**
+  - Crear `src/services/billing.js` con métodos:
+    - listByUser(userId, params): GET `/users/:userId/billings?include=auction`
+    - listAll(params): GET `/billing?include=user,auction` (admin)
+    - getById(id, include='user,auction'): GET `/billing/:id?include=user,auction`
+    - complete(id, dto): PATCH `/billing/:id/complete` con body { billing_document_type, billing_document_number, billing_name }
+  - Manejo de errores mapeados a UI:
+    - 409/BILLING_ALREADY_COMPLETED → “Esta facturación ya fue completada”
+    - 409/DUPLICATE_BILLING_DOCUMENT → “El número de documento ya fue usado por este usuario”
+    - 403/FORBIDDEN → “No tiene permisos sobre esta facturación”
+  - Headers con session_id como en base API.
+
+- [ ] **9.2 Vista Cliente: “Mis Facturaciones”**
+  - Ruta sugerida: `/pago-subastas/billing` (en App Router del cliente).
+  - Listado: consumir listByUser(userId, include=auction) y mostrar cards:
+    - Campos: Billing ID, concepto, monto, moneda, created_at, related.auction.{placa, marca, modelo, año, empresa_propietaria}, estado visual “Datos pendientes” si cualquier billing_document_* es null.
+  - Acción “Completar Datos” visible solo si campos pendientes:
+    - Navegar a `/pago-subastas/billing/:id/complete`
+  - Integración con notificaciones:
+    - Si llega `tipo=competencia_ganada` con referencia al billing, deep-link a `/pago-subastas/billing/:id/complete`.
+
+- [ ] **9.3 Formulario Completar Facturación (Cliente y Admin)**
+  - Componente dedicado: `BillingCompleteForm.jsx`
+  - Campos obligatorios:
+    - billing_document_type: radio RUC | DNI
+    - billing_document_number: input con máscara/validación:
+      - DNI: exactamente 8 dígitos
+      - RUC: exactamente 11 dígitos
+    - billing_name: 3-200 caracteres
+  - Mostrar en solo-lectura: monto, moneda, concepto, resumen de subasta (placa, marca, modelo, año).
+  - Confirmación modal antes de enviar: “Una vez enviados no podrán modificarse.”
+  - Éxito: toast + redirección a detalle de billing o listado.
+  - Errores: mapear mensajes de backend según códigos (ver 9.1).
+
+- [ ] **9.4 Detalle de Factura (Cliente/Admin)**
+  - Ruta: `/pago-subastas/billing/:id` (cliente) y `/admin-subastas/billing/:id` (admin).
+  - Consumir getById(include=user,auction).
+  - Mostrar:
+    - Datos cliente (related.user) si admin
+    - Datos subasta (related.auction)
+    - Datos facturación: documento tipo/número, nombre, monto, concepto, fechas
+  - Si está pendiente y el rol lo permite, botón “Completar Datos” → usa el mismo `BillingCompleteForm`.
+
+- [ ] **9.5 Gestión Billing (Admin)**
+  - Página: `/admin-subastas/billing`
+  - Listado con filtros: rango fechas, estado (pendiente/completa), búsqueda por placa/cliente
+    - “Pendiente” si algún billing_document_* es null
+  - Columns: ID, cliente, subasta(placa), monto, created_at, estado, acción
+  - Acción rápida “Completar Datos” (abre formulario modo admin).
+
+- [ ] **9.6 Componentes UI**
+  - BillingCard.jsx: card para listado (cliente)
+  - BillingStatusBadge.jsx: “Pendiente” | “Completada”
+  - BillingList.jsx: lista paginada + paginación común
+  - BillingDetail.jsx: detalle
+  - BillingCompleteForm.jsx: formulario de completar
+  - BillingFilters.jsx (admin): filtros fecha/estado/búsqueda
+
+- [ ] **9.7 Reglas de Visibilidad/Flujo**
+  - El backend crea el Billing automáticamente al marcar “ganada”; no hay botón de “Crear” en frontend.
+  - “Completar Datos” solo se muestra si hay campos pendientes.
+  - Tras completar:
+    - No cambia saldos en UI (ya se liberó retenido al crear Billing). Mostrar aclaración “Su garantía ya fue aplicada”.
+  - Notificaciones:
+    - competencia_ganada → CTA “Completar facturación” (deep-link)
+    - facturacion_completada (cliente) → confirmar finalización
+    - billing_generado (admin) → visibilidad en gestión
+
+- [ ] **9.8 Integración con rutas y navegación**
+  - Agregar rutas a la estructura del router:
+    - Cliente:
+      - `/pago-subastas/billing` (Listado)
+      - `/pago-subastas/billing/:id` (Detalle)
+      - `/pago-subastas/billing/:id/complete` (Formulario completar)
+    - Admin:
+      - `/admin-subastas/billing` (Gestión)
+      - `/admin-subastas/billing/:id` (Detalle)
+  - Enlaces desde:
+    - Panel de notificaciones (items con reference_type=billing)
+    - Cards de subastas ganadas (si corresponde)
+
+- [ ] **9.9 Validaciones en Frontend**
+  - DNI 8 dígitos exactos; RUC 11 dígitos exactos (bloquear envío si no cumple).
+  - billing_name entre 3 y 200 caracteres.
+  - Deshabilitar botón enviar mientras POST/PATCH pendiente.
+  - Mostrar errores backend legibles.
+
+- [ ] **9.10 Estados vacíos y loaders**
+  - Listado sin datos: mensaje contextual “No tienes facturaciones pendientes.”
+  - Skeletons para cards/detalle.
 
 **🧪 PUNTO DE TESTING 9:**
-- Probar formulario billing cuando ganada
-- Verificar impacto en saldos (retenido→aplicado)
-- Testing validaciones documento
-- Probar flujo completo ganada→facturada
+- [ ] Simular notificación competencia_ganada → deep-link a completar y enviar PATCH exitoso.
+- [ ] Validar errores:
+  - Billing ya completado (409/BILLING_ALREADY_COMPLETED)
+  - Documento duplicado (409/DUPLICATE_BILLING_DOCUMENT)
+  - Acceso denegado (403/FORBIDDEN)
+- [ ] Cliente: ver listado, completar, ver detalle.
+- [ ] Admin: ver gestión, completar en nombre del cliente, ver detalle.
+- [ ] Verificar que saldos no cambian en esta fase (mensaje aclaratorio).
 
 ---
 
@@ -351,7 +439,7 @@
 **Objetivo:** Completar funcionalidades restantes
 
 **TODO DETALLADO:**
-- [ ] **11.1** Implementar búsquedas y filtros avanzados
+- [ ] **11.1** Splash Screen para cargas generales
 - [ ] **11.2** Sistema de estados y indicadores visuales
 - [ ] **11.3** Gestión de errores y loading states
 - [ ] **11.4** Breadcrumbs y navegación

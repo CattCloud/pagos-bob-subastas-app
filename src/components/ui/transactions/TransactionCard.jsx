@@ -208,6 +208,9 @@ function TransactionCard({ movement, onDetail }) {
 
   const conceptText = displayConcept || `Pago de garantía${numero_operacion ? ' - N° Operación ' + numero_operacion : ''}`;
 
+  console.log(conceptText)
+
+
   return (
     <Card className="p-5 rounded-2xl border border-border bg-white shadow-md hover:shadow-lg transition">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

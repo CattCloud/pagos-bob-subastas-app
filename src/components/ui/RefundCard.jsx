@@ -95,101 +95,108 @@ export default function RefundCard({
     (Date.now() - new Date(created_at).getTime()) > (3 * 24 * 60 * 60 * 1000);
 
   return (
-    <div 
-      className={`
-        p-4 border rounded-lg cursor-pointer transition-colors hover:shadow-md
-        ${stateConfig.borderColor} ${stateConfig.bgColor}
-        ${isUrgent ? 'ring-2 ring-warning/50' : ''}
-        ${compact ? 'p-3' : 'p-4'}
-      `}
-      onClick={onClick}
-    >
-      <div className="flex items-start justify-between gap-4 ">
-        <div className="flex-1 min-w-0">
-          {/* Header con estado y tipo */}
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`flex items-center gap-1 ${stateConfig.color}`}>
-              <StateIcon className="w-4 h-4" />
-              <span className="font-semibold text-sm">{stateConfig.label}</span>
-            </div>
-            
 
-            {isUrgent && (
-              <span className="px-2 py-1 text-xs font-medium bg-warning text-white rounded-full">
-                Urgente
-              </span>
-            )}
+<div
+  className={`
+    p-5 rounded-xl border shadow-sm bg-white transition hover:shadow-lg hover:border-primary-300
+    ${stateConfig.borderColor} ${stateConfig.bgColor}
+    ${isUrgent ? "ring-2 ring-warning/40" : ""}
+    ${compact ? "p-3" : "p-5"}
+  `}
+  onClick={onClick}
+>
+  <div className="flex flex-col gap-4">
+
+    {/* HEADER: Estado + Urgencia */}
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className={`flex items-center gap-2 ${stateConfig.color}`}>
+        <StateIcon className="w-4 h-4" />
+        <span className="font-semibold text-sm">{stateConfig.label}</span>
+      </div>
+
+      {isUrgent && (
+        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-warning text-white rounded-full shadow-sm">
+          <FaExclamationTriangle className="w-3 h-3" />
+          Urgente
+        </span>
+      )}
+    </div>
+
+    {/* BLOQUE PRINCIPAL */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      {/* Monto solicitado */}
+      <div className="flex flex-col">
+        <p className="text-xs text-text-secondary uppercase tracking-wide">Monto solicitado</p>
+        <div className="flex items-center gap-2">
+          <FaMoneyCheckAlt className="text-success w-5 h-5" />
+          <span className="font-bold text-xl text-text-primary">{formatCurrency(monto)}</span>
+        </div>
+      </div>
+
+      {/* Información del cliente */}
+      {showClientInfo && (userFullName || userDocLine) && (
+        <div>
+          <p className="text-xs text-text-secondary uppercase tracking-wide">Cliente</p>
+          <div className="flex items-center gap-2">
+            <FaUserTie className="text-primary-500 w-4 h-4" />
+            <span className="font-medium text-text-primary">{userFullName || "—"}</span>
           </div>
-
-          {/* Información principal */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-text-secondary">Monto solicitado:</p>
-              <p className="font-bold text-lg text-text-primary">{formatCurrency(monto)}</p>
-            </div>
-            
-            {showClientInfo && (userFullName || userDocLine) && (
-              <div>
-                <p className="text-text-secondary">Cliente:</p>
-                <p className="font-medium text-text-primary">
-                  {userFullName || '—'}
-                </p>
-                {userDocLine && (
-                  <p className="text-xs text-text-muted">
-                    {userDocLine}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {hasAuctionInfo && (
-              <div className={showClientInfo ? 'md:col-span-2' : ''}>
-                <p className="text-text-secondary">Subasta:</p>
-                <p className="font-medium text-text-primary">
-                  {auctionLine}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Motivo (truncado) */}
-          {motivo && (
-            <div className="mt-3">
-              <p className="text-text-secondary text-xs">Motivo:</p>
-              <p className="text-sm text-text-primary line-clamp-2">
-                {motivo.length > 100 ? `${motivo.slice(0, 100)}...` : motivo}
-              </p>
-            </div>
+          {userDocLine && (
+            <p className="text-xs text-text-muted mt-1">{userDocLine}</p>
           )}
+        </div>
+      )}
 
-          {/* Footer con fechas */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-            <div className="text-xs text-text-muted">
-              Solicitado: {createdDate}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {fecha_respuesta_empresa && (
-                <span className="text-xs text-text-secondary">
-                  Revisado: {formatRelativeDate(fecha_respuesta_empresa)}
-                </span>
-              )}
-              {fecha_procesamiento && (
-                <span className="text-xs text-success">
-                  Procesado: {formatRelativeDate(fecha_procesamiento)}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Descripción del estado */}
-          <div className="mt-2">
-            <p className="text-xs text-text-muted">{stateConfig.description}</p>
+      {/* Información de la subasta */}
+      {hasAuctionInfo && (
+        <div className={showClientInfo ? "md:col-span-2" : ""}>
+          <p className="text-xs text-text-secondary uppercase tracking-wide">Subasta</p>
+          <div className="flex items-center gap-2">
+            <FaGavel className="text-primary-500 w-4 h-4" />
+            <span className="font-medium text-text-primary">{auctionLine}</span>
           </div>
         </div>
+      )}
+    </div>
 
+    {/* Motivo */}
+    {motivo && (
+      <div className="bg-gray-50 rounded-md p-3 border border-border/40">
+        <p className="text-xs text-text-secondary uppercase tracking-wide mb-1">Motivo</p>
+        <p className="text-sm text-text-primary leading-relaxed">
+          {motivo.length > 100 ? `${motivo.slice(0, 100)}...` : motivo}
+        </p>
+      </div>
+    )}
 
+    {/* FOOTER: Fechas */}
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-3 border-t border-border/30">
+      <div className="flex items-center gap-2 text-xs text-text-muted">
+        <FaCalendarAlt className="w-3 h-3" />
+        Solicitado: {createdDate}
+      </div>
+
+      <div className="flex items-center flex-wrap gap-3">
+        {fecha_respuesta_empresa && (
+          <span className="flex items-center gap-1 text-xs text-text-secondary">
+            <FaClipboardCheck className="text-primary-500 w-3 h-3" />
+            Revisado: {formatRelativeDate(fecha_respuesta_empresa)}
+          </span>
+        )}
+        {fecha_procesamiento && (
+          <span className="flex items-center gap-1 text-xs text-success font-semibold">
+            <FaClipboardCheck className="w-3 h-3" />
+            Procesado: {formatRelativeDate(fecha_procesamiento)}
+          </span>
+        )}
       </div>
     </div>
+
+    {/* Descripción del estado */}
+    <p className="text-xs text-text-muted italic">{stateConfig.description}</p>
+  </div>
+</div>
+
   );
 }

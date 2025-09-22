@@ -237,18 +237,6 @@ function AdminDashboard() {
         </div>
       </Card>
 
-      {/* Información del sistema */}
-      <Card variant="ghost" title="Sistema BOB Subastas">
-        <div className="text-sm text-text-secondary">
-          <p>
-            Dashboard administrativo para gestión de pagos de garantía, 
-            validación de transacciones y control de saldos del sistema.
-          </p>
-          <p className="mt-2">
-            Versión: 1.0.0 | Ambiente: Desarrollo
-          </p>
-        </div>
-      </Card>
     </div>
   );
 }

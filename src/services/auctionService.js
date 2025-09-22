@@ -52,6 +52,28 @@ export default class AuctionService {
     }
   }
   /**
+   * Listar TODAS las subastas ganadas por el usuario (sin filtrar por pago)
+   * GET /users/:id/won-auctions
+   * HU-SUB-01 — Mis Subastas (Cliente)
+   * @param {string} userId
+   * @returns {Promise<Array>} Lista de items con { auction, payment_status?, guarantee_details? }
+   */
+  static async getUserWonAuctionsAll(userId) {
+    try {
+      const res = await apiService.get(`/users/${userId}/won-auctions`);
+      if (res?.success && res?.data) {
+        // El backend expone { won_auctions: [ { auction, payment_status, guarantee_details } ] }
+        // Devolvemos el arreglo tal cual para máxima compatibilidad.
+        return res.data.won_auctions || res.data.auctions || res.data.wonAuctions || res.data || [];
+      }
+      throw new Error(res?.message || 'No se pudieron obtener subastas ganadas');
+    } catch (err) {
+      console.error('AuctionService.getUserWonAuctionsAll error:', err);
+      throw err;
+    }
+  }
+
+  /**
    * Listar subastas con filtros (Admin)
    * GET /auctions
    * @param {object} filters { estado, search, page, limit }

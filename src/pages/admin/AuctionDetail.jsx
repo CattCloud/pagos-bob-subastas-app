@@ -10,6 +10,7 @@ import AuctionService from '../../services/auctionService';
 import useAuctions from '../../hooks/useAuctions';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { showToast } from '../../utils/toast';
+import BillingService from '../../services/billing';
 
 const AUCTION_STATES = {
   activa: { label: 'Activa', color: 'text-success', bgColor: 'bg-success/10' },
@@ -44,6 +45,25 @@ export default function AuctionDetail() {
     enabled: Boolean(auctionId),
     staleTime: 30_000,
   });
+
+  // Buscar Billing generado para esta subasta (HU-COMP-02)
+  const {
+    data: billingListData,
+  } = useQuery({
+    queryKey: ['auction-billing', auctionId],
+    queryFn: async () => {
+      // Lista global con include para filtrar por auction en cliente
+      const res = await BillingService.listAll({ page: 1, limit: 100, include: 'user,auction' });
+      return res?.billings || [];
+    },
+    enabled: Boolean(auctionId),
+    staleTime: 30_000,
+  });
+
+  const billingForAuction = (billingListData || []).find(
+    (b) => b?.related?.auction?.id === auctionId
+  );
+  const billingId = billingForAuction?.id;
 
   const handleAssignWinner = async (winnerData) => {
     try {
@@ -132,10 +152,13 @@ export default function AuctionDetail() {
       case 'ganada':
         buttons.push(
           {
-            label: 'Ver Factura Generada',
+            label: 'Ver Estado Facturación',
             variant: 'success',
             icon: FaFileInvoice,
-            onClick: () => navigate('/admin-subastas/billing'),
+            onClick: () =>
+              billingId
+                ? navigate(`/admin-subastas/billing/${billingId}`)
+                : navigate('/admin-subastas/billing'),
           },
           {
             label: 'Ver Pago Registrado',

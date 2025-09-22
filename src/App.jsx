@@ -18,17 +18,21 @@ import PaymentRegistration from './pages/client/PaymentRegistration';
 import RefundManagement from './pages/client/RefundManagement';
 import RefundDetail from './pages/client/RefundDetail';
 import Notifications from './pages/client/Notifications';
+import BillingList from './pages/client/BillingList';
+import ClientBillingDetail from './pages/client/BillingDetail';
+import ClientBillingComplete from './pages/client/BillingComplete';
+import MyAuctions from './pages/client/MyAuctions';
 
 // Páginas admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PaymentValidation from './pages/admin/PaymentValidation';
 import AuctionManagement from './pages/admin/AuctionManagement';
-import CompetitionResults from './pages/admin/CompetitionResults';
 import BillingManagement from './pages/admin/BillingManagement';
 import AdminRefundManagement from './pages/admin/AdminRefundManagement';
 import BalanceManagement from './pages/admin/BalanceManagement';
 import AdminNotifications from './pages/admin/AdminNotifications';
 import AuctionDetail from './pages/admin/AuctionDetail';
+import AdminBillingDetail from './pages/admin/BillingDetail';
 
 // Páginas de auth
 import ClientLogin from './pages/auth/ClientLogin';
@@ -63,6 +67,12 @@ function App() {
               <Route path="refunds" element={<RefundManagement />} />
               <Route path="refunds/:refundId" element={<RefundDetail />} />
               <Route path="notifications" element={<Notifications />} />
+              {/* Mis Subastas (cliente) */}
+              <Route path="auctions" element={<MyAuctions />} />
+              {/* Facturación (cliente) */}
+              <Route path="billing" element={<BillingList />} />
+              <Route path="billing/:billingId" element={<ClientBillingDetail />} />
+              <Route path="billing/:billingId/complete" element={<ClientBillingComplete />} />
             </Route>
             
             {/* Rutas admin protegidas */}
@@ -78,8 +88,8 @@ function App() {
               <Route path="payments" element={<PaymentValidation />} />
               <Route path="auctions" element={<AuctionManagement />} />
               <Route path="auctions/:auctionId" element={<AuctionDetail />} />
-              <Route path="competition" element={<CompetitionResults />} />
               <Route path="billing" element={<BillingManagement />} />
+              <Route path="billing/:billingId" element={<AdminBillingDetail />} />
               <Route path="refunds" element={<AdminRefundManagement />} />
               <Route path="balances" element={<BalanceManagement />} />
               <Route path="notifications" element={<AdminNotifications />} />

@@ -4,10 +4,12 @@ import useAuth from '../../hooks/useAuth';
 import useNotifications from '../../hooks/useNotifications';
 import { FaBars, FaTimes, FaUserShield, FaSignOutAlt } from 'react-icons/fa';
 import NotificationBadge from '../ui/NotificationBadge';
+import useAdminBadges from '../../hooks/useAdminBadges';
 
 function AdminLayout() {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const { pendingPaymentsCount, pendingRefundsCount } = useAdminBadges();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Dropdown de usuario (perfil)
@@ -141,13 +143,18 @@ function AdminLayout() {
                   to="/admin-subastas/payments"
                   onClick={closeMobileMenu}
                   className={({ isActive }) =>
-                    `block px-4 py-2 rounded-lg transition-colors ${isActive
+                    `flex items-center justify-between px-4 py-2 rounded-lg transition-colors ${isActive
                       ? 'bg-primary-50 text-primary-600 font-medium'
                       : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
                     }`
                   }
                 >
-                  Pagos de Garantía
+                  <span>Pagos de Garantía</span>
+                  {pendingPaymentsCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-5 h-5 text-xs font-bold text-white bg-error rounded-full">
+                      {pendingPaymentsCount > 99 ? '99+' : pendingPaymentsCount}
+                    </span>
+                  )}
                 </NavLink>
               </li>
               <li>
@@ -162,20 +169,6 @@ function AdminLayout() {
                   }
                 >
                   Gestión Subastas
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/admin-subastas/competition"
-                  onClick={closeMobileMenu}
-                  className={({ isActive }) =>
-                    `block px-4 py-2 rounded-lg transition-colors ${isActive
-                      ? 'bg-primary-50 text-primary-600 font-medium'
-                      : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-                    }`
-                  }
-                >
-                  Resultados Competencia
                 </NavLink>
               </li>
               <li>
@@ -197,13 +190,18 @@ function AdminLayout() {
                   to="/admin-subastas/refunds"
                   onClick={closeMobileMenu}
                   className={({ isActive }) =>
-                    `block px-4 py-2 rounded-lg transition-colors ${isActive
+                    `flex items-center justify-between px-4 py-2 rounded-lg transition-colors ${isActive
                       ? 'bg-primary-50 text-primary-600 font-medium'
                       : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
                     }`
                   }
                 >
-                  Gestión Reembolsos
+                  <span>Gestión Reembolsos</span>
+                  {pendingRefundsCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-5 h-5 text-xs font-bold text-white bg-error rounded-full">
+                      {pendingRefundsCount > 99 ? '99+' : pendingRefundsCount}
+                    </span>
+                  )}
                 </NavLink>
               </li>
               <li>

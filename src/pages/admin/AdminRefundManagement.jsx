@@ -34,7 +34,10 @@ export default function AdminRefundManagement() {
   const [formData, setFormData] = useState({
     motivo: '',
     numero_operacion: '',
-    voucher: null
+    voucher: null,
+    tipo_transferencia: 'transferencia',
+    banco_destino: '',
+    numero_cuenta_destino: ''
   });
 
   // Estadísticas
@@ -95,8 +98,18 @@ export default function AdminRefundManagement() {
       }
 
       const form = new FormData();
-      form.append('tipo_transferencia', 'transferencia');
-      form.append('numero_operacion', formData.numero_operacion);
+      // Obligatorio
+      form.append('numero_operacion', formData.numero_operacion.trim());
+      // Opcionales (según contrato de API)
+      if (formData.tipo_transferencia) {
+        form.append('tipo_transferencia', formData.tipo_transferencia);
+      }
+      if (formData.banco_destino?.trim()) {
+        form.append('banco_destino', formData.banco_destino.trim());
+      }
+      if (formData.numero_cuenta_destino?.trim()) {
+        form.append('numero_cuenta_destino', formData.numero_cuenta_destino.trim());
+      }
       if (formData.voucher) {
         form.append('voucher', formData.voucher, formData.voucher.name);
       }
@@ -114,7 +127,14 @@ export default function AdminRefundManagement() {
   const openModal = (refund, actionType) => {
     setSelectedRefund(refund);
     setAction(actionType);
-    setFormData({ motivo: '', numero_operacion: '', voucher: null });
+    setFormData({
+      motivo: '',
+      numero_operacion: '',
+      voucher: null,
+      tipo_transferencia: 'transferencia',
+      banco_destino: '',
+      numero_cuenta_destino: ''
+    });
   };
 
   const closeModal = () => {
@@ -325,10 +345,10 @@ export default function AdminRefundManagement() {
                 <div>
                   <p className="text-text-secondary">Cliente:</p>
                   <p className="font-semibold">
-                    {selectedRefund.user?.first_name} {selectedRefund.user?.last_name}
+                    {(selectedRefund?.related?.user?.first_name || selectedRefund?.user?.first_name) || '—'} {(selectedRefund?.related?.user?.last_name || selectedRefund?.user?.last_name) || ''}
                   </p>
                   <p className="text-text-muted">
-                    {selectedRefund.user?.document_type} {selectedRefund.user?.document_number}
+                    {(selectedRefund?.related?.user?.document_type || selectedRefund?.user?.document_type) || ''} {(selectedRefund?.related?.user?.document_number || selectedRefund?.user?.document_number) || ''}
                   </p>
                 </div>
                 <div>
@@ -370,6 +390,30 @@ export default function AdminRefundManagement() {
 
             {action === 'process' && (
               <div className="space-y-4">
+                <Select
+                  label="Tipo de Transferencia"
+                  value={formData.tipo_transferencia}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tipo_transferencia: e.target.value }))}
+                  options={[
+                    { value: 'transferencia', label: 'Transferencia bancaria' },
+                    { value: 'deposito', label: 'Depósito en cuenta' }
+                  ]}
+                />
+
+                <Input
+                  label="Banco Destino (opcional)"
+                  placeholder="Ej. BCP, BBVA, Scotiabank"
+                  value={formData.banco_destino}
+                  onChange={(e) => setFormData(prev => ({ ...prev, banco_destino: e.target.value }))}
+                />
+
+                <Input
+                  label="Número de Cuenta Destino (opcional)"
+                  placeholder="Ej. 001-1234567890"
+                  value={formData.numero_cuenta_destino}
+                  onChange={(e) => setFormData(prev => ({ ...prev, numero_cuenta_destino: e.target.value }))}
+                />
+
                 <Input
                   label="Número de Operación"
                   placeholder="Ej. OP-REF-123456"

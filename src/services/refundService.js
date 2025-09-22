@@ -159,16 +159,16 @@ export class RefundService {
   /**
    * Procesar reembolso confirmado (Admin, HU-REEM-03)
    * @param {string} refundId
-   * @param {FormData|object} data - Para devolver_dinero: FormData con voucher; Para mantener_saldo: {}
+   * @param {FormData|object} data - FormData con: numero_operacion (obligatorio), tipo_transferencia? ('transferencia'|'deposito'), banco_destino?, numero_cuenta_destino?, voucher?
    * @returns {Promise<object>}
    */
   static async processRefund(refundId, data) {
     try {
       const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
-      const response = isFormData 
-        ? await apiService.uploadFile(`/refunds/${refundId}/process`, data)
+      const response = isFormData
+        ? await apiService.request(`/refunds/${refundId}/process`, { method: 'PATCH', body: data })
         : await apiService.patch(`/refunds/${refundId}/process`, data);
-      
+
       if (response.success) return response;
       throw new Error(response.message || 'Error al procesar reembolso');
     } catch (error) {

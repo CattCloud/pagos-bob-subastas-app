@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import useAuctions from '../../hooks/useAuctions';
 import { showToast } from '../../utils/toast';
 import { FaPlus } from 'react-icons/fa';
+import CompetitionResultForm from '../../components/forms/CompetitionResultForm';
 
 
 function AuctionManagement() {
@@ -37,6 +38,12 @@ function AuctionManagement() {
   // Modal crear subasta
   const [showCreate, setShowCreate] = useState(false);
 
+  // Modal gestionar resultado de competencia (migrado desde Resultados de Competencia)
+  const [selectedAuction, setSelectedAuction] = useState(null);
+
+  const onOpenResultModal = (auction) => setSelectedAuction(auction);
+  const onCloseResultModal = () => setSelectedAuction(null);
+
   // Formulario creación subasta + activo
   const {
     register,
@@ -56,6 +63,8 @@ function AuctionManagement() {
   });
 
   
+
+  const { setCompetitionResult, isSettingResult } = useAuctions(filters);
 
   const onCreateAuction = async (data) => {
     try {
@@ -80,6 +89,24 @@ function AuctionManagement() {
       showToast.error(err?.message || 'Error al crear subasta');
     }
   };
+
+ const onSubmitResult = async (data) => {
+   if (!selectedAuction) return;
+   try {
+     await setCompetitionResult(selectedAuction.id, data);
+     const resultLabels = {
+       ganada: 'BOB GANÓ 🏆',
+       perdida: 'BOB PERDIÓ ❌',
+       penalizada: 'CLIENTE NO PAGÓ VEHÍCULO ⚠️'
+     };
+     const resultLabel = resultLabels[data.resultado] || data.resultado;
+     showToast.success(`Resultado registrado: ${resultLabel}`);
+     onCloseResultModal();
+     refetchAuctions();
+   } catch (err) {
+     showToast.error(err?.message || 'Error al registrar resultado de competencia');
+   }
+ };
 
   const estadosOptions = [
     { value: 'todos', label: 'Todos los estados' },
@@ -197,13 +224,13 @@ function AuctionManagement() {
                       onClick: () => navigate(`/admin-subastas/auctions/${a.id}`)
                     },
                     {
-                      label: 'Resultado Competencia',
+                      label: 'Gestionar Resultado',
                       variant: 'primary',
                       disabled: a.estado !== 'finalizada',
                       title: a.estado !== 'finalizada'
                         ? 'Disponible solo cuando la subasta está finalizada'
-                        : 'Gestionar Resultado Competencia',
-                      onClick: () => navigate('/admin-subastas/competition')
+                        : 'Registrar resultado de competencia externa',
+                      onClick: () => onOpenResultModal(a)
                     }
                   ]}
                 />
@@ -334,6 +361,23 @@ function AuctionManagement() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: Gestionar Resultado de Competencia (migrado desde Resultados de Competencia) */}
+      <Modal
+        isOpen={!!selectedAuction}
+        onClose={onCloseResultModal}
+        title="Resultado Competencia"
+        size="xl"
+      >
+        {selectedAuction && (
+          <CompetitionResultForm
+            auction={selectedAuction}
+            onSubmit={onSubmitResult}
+            onCancel={onCloseResultModal}
+            isSubmitting={isSettingResult}
+          />
+        )}
       </Modal>
     </div>
   );

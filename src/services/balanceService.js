@@ -26,30 +26,82 @@ export class BalanceService {
       throw error;
     }
   }
-  
+
   /**
-   * Obtener resumen de saldos de todos los usuarios (admin)
-   * @returns {Promise<Object>} - Resumen de saldos del sistema
+   * Listado paginado de saldos (Admin)
+   * GET /balances/summary?search=&page=&limit=
+   * @param {{search?:string,page?:number,limit?:number}} params
+   * @returns {Promise<{ balances:Array, pagination:Object, stats?:Object }>}
+   */
+  static async listSummary(params = {}) {
+    try {
+      const query = new URLSearchParams();
+      if (params.search) query.set('search', String(params.search).trim());
+      if (params.page) query.set('page', String(params.page));
+      if (params.limit) query.set('limit', String(params.limit));
+
+      const endpoint = query.toString() ? `/balances/summary?${query.toString()}` : '/balances/summary';
+      const response = await apiService.get(endpoint);
+
+      if (response.success && response.data) {
+        const balances = response.data.balances || [];
+        const pagination = response.data.pagination || { page: 1, limit: 20, total: balances.length, total_pages: 1 };
+        // Adjuntar stats calculadas en cliente para apoyo UI
+        const stats = this.calculateBalanceStats(balances);
+        return { balances, pagination, stats };
+      }
+      throw new Error(response.message || 'Error al obtener resumen de saldos');
+    } catch (error) {
+      console.error('Error en listSummary:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener resumen de saldos de todos los usuarios (admin) (sin filtros)
+   * Mantiene compatibilidad con llamadas existentes.
+   * @returns {Promise<Object>} - { balances, pagination?, stats }
    */
   static async getBalancesSummary() {
     try {
-      const response = await apiService.get('/balances/summary');
-      
-      if (response.success && response.data) {
-        // Calcular estadísticas desde los balances obtenidos
-        const balances = response.data.balances || [];
-        const stats = this.calculateBalanceStats(balances);
-        
-        return {
-          ...response.data,
-          stats
-        };
-      } else {
-        throw new Error(response.message || 'Error al obtener resumen de saldos');
-      }
-      
+      const result = await this.listSummary();
+      return { balances: result.balances, pagination: result.pagination, stats: result.stats };
     } catch (error) {
       console.error('Error en getBalancesSummary:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stats del sistema de balances (Admin)
+   * GET /balances/stats
+   */
+  static async getBalancesStats() {
+    try {
+      const response = await apiService.get('/balances/stats');
+      if (response.success && response.data) {
+        return response.data;
+      }
+      throw new Error(response.message || 'Error al obtener estadísticas de saldos');
+    } catch (error) {
+      console.error('Error en getBalancesStats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Dashboard de balances (Admin)
+   * GET /balances/dashboard
+   */
+  static async getBalancesDashboard() {
+    try {
+      const response = await apiService.get('/balances/dashboard');
+      if (response.success && response.data) {
+        return response.data;
+      }
+      throw new Error(response.message || 'Error al obtener dashboard de saldos');
+    } catch (error) {
+      console.error('Error en getBalancesDashboard:', error);
       throw error;
     }
   }

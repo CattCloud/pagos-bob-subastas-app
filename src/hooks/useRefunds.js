@@ -56,6 +56,8 @@ export default function useRefunds(filters = {}) {
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
       // Admin: lista global (si la vista está abierta debe refrescar)
       queryClient.invalidateQueries({ queryKey: ['all-refunds'] });
+      // Badges admin: solicitudes pendientes de confirmación
+      queryClient.invalidateQueries({ queryKey: ['admin-badge', 'pending-refunds'] });
     },
   });
 
@@ -85,6 +87,8 @@ export default function useRefunds(filters = {}) {
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       // Opcional: movimientos podrían reflejar rechazos/procesos previos
       queryClient.invalidateQueries({ queryKey: ['movements'] });
+      // Badges admin: solicitudes pendientes de confirmación
+      queryClient.invalidateQueries({ queryKey: ['admin-badge', 'pending-refunds'] });
     },
   });
 
@@ -98,6 +102,8 @@ export default function useRefunds(filters = {}) {
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       queryClient.invalidateQueries({ queryKey: ['movements'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      // Badges admin: solicitudes pendientes de confirmación
+      queryClient.invalidateQueries({ queryKey: ['admin-badge', 'pending-refunds'] });
     },
   });
 
