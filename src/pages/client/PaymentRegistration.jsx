@@ -399,8 +399,8 @@ export default function PaymentRegistration() {
                   <p className="text-sm font-medium text-text-primary">{paymentData?.numero_operacion || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-text-secondary">Fecha de pago</p>
-                  <p className="text-sm font-medium text-text-primary">{paymentData?.fecha_pago || '—'}</p>
+                  <p className="text-xs text-text-secondary text-white">Fecha de pago</p>
+                  <p className="text-sm font-medium text-text-primary text-white">{paymentData?.fecha_pago || '—'}</p>
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-xs text-text-secondary">Concepto</p>

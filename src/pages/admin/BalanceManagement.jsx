@@ -238,7 +238,7 @@ export default function BalanceManagement() {
           )}
 
           {!isLoading && !isError && balances.length > 0 && (
-            <table className="min-w-full divide-y divide-border">
+            <table className="min-w-full divide-y divide-border text-white">
               <thead className="bg-bg-tertiary">
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Cliente</th>

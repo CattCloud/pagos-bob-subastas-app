@@ -89,8 +89,8 @@ function ClientLayout() {
                 title="Saldo disponible"
               >
                 <FaWallet className="w-4 h-6" />
-                <span className="text-xs font-semibold">Disponible:</span>
-                <span className="text-xs font-bold">{balanceText}</span>
+                <span className="text-xl font-semibold">Disponible:</span>
+                <span className="text-xl font-bold">{balanceText}</span>
               </div>
 
               {/* Badge de notificaciones */}

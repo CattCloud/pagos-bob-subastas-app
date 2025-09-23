@@ -339,7 +339,7 @@ function AuctionManagement() {
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-text-primary mb-2">Descripción (opcional)</label>
               <textarea
-                className="w-full px-3 py-2 border border-border rounded-md focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-border rounded-md focus:ring-primary-500 focus:border-primary-500 text-white"
                 rows={3}
                 placeholder="Información adicional del activo"
                 {...register('descripcion', {
